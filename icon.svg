@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a0e1a"/>
+      <stop offset="100%" style="stop-color:#111c35"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="90" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="256" y="68" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-size="58" font-weight="900" letter-spacing="5" fill="#00e5ff">TRIATHLON</text>
+  <line x1="60" y1="80" x2="452" y2="80" stroke="#1e2d4a" stroke-width="2"/>
+
+  <!-- Road -->
+  <rect x="40" y="400" width="432" height="22" rx="6" fill="#1a2540"/>
+  <rect x="140" y="408" width="60" height="6" rx="3" fill="#facc15" opacity="0.7"/>
+  <rect x="226" y="408" width="60" height="6" rx="3" fill="#facc15" opacity="0.7"/>
+  <rect x="312" y="408" width="60" height="6" rx="3" fill="#facc15" opacity="0.7"/>
+
+  <!-- ═══ ATHLETE 1 – Smitty (cyan, left) ═══ -->
+  <!-- Wheels -->
+  <circle cx="130" cy="385" r="55" fill="none" stroke="#00e5ff" stroke-width="8"/>
+  <circle cx="130" cy="385" r="7" fill="#00e5ff"/>
+  <line x1="130" y1="330" x2="130" y2="440" stroke="#00e5ff" stroke-width="3" opacity="0.4"/>
+  <line x1="75" y1="385" x2="185" y2="385" stroke="#00e5ff" stroke-width="3" opacity="0.4"/>
+  <line x1="91" y1="346" x2="169" y2="424" stroke="#00e5ff" stroke-width="3" opacity="0.3"/>
+  <line x1="169" y1="346" x2="91" y2="424" stroke="#00e5ff" stroke-width="3" opacity="0.3"/>
+
+  <circle cx="240" cy="385" r="55" fill="none" stroke="#00e5ff" stroke-width="8"/>
+  <circle cx="240" cy="385" r="7" fill="#00e5ff"/>
+  <line x1="240" y1="330" x2="240" y2="440" stroke="#00e5ff" stroke-width="3" opacity="0.4"/>
+  <line x1="185" y1="385" x2="295" y2="385" stroke="#00e5ff" stroke-width="3" opacity="0.4"/>
+  <line x1="201" y1="346" x2="279" y2="424" stroke="#00e5ff" stroke-width="3" opacity="0.3"/>
+  <line x1="279" y1="346" x2="201" y2="424" stroke="#00e5ff" stroke-width="3" opacity="0.3"/>
+
+  <!-- Bike frame -->
+  <!-- Chain stay: rear axle to bottom bracket -->
+  <line x1="130" y1="385" x2="178" y2="345" stroke="#00e5ff" stroke-width="7" stroke-linecap="round"/>
+  <!-- Seat tube: bottom bracket to seat -->
+  <line x1="178" y1="345" x2="168" y2="295" stroke="#00e5ff" stroke-width="7" stroke-linecap="round"/>
+  <!-- Top tube: seat to head -->
+  <line x1="168" y1="295" x2="220" y2="290" stroke="#00e5ff" stroke-width="6" stroke-linecap="round"/>
+  <!-- Down tube: head to bottom bracket -->
+  <line x1="220" y1="290" x2="178" y2="345" stroke="#00e5ff" stroke-width="7" stroke-linecap="round"/>
+  <!-- Fork: head to front axle -->
+  <line x1="220" y1="290" x2="240" y2="385" stroke="#00e5ff" stroke-width="7" stroke-linecap="round"/>
+  <!-- Seat stay: seat to rear axle -->
+  <line x1="168" y1="295" x2="130" y2="385" stroke="#00e5ff" stroke-width="5" stroke-linecap="round"/>
+  <!-- Saddle -->
+  <rect x="155" y="288" width="30" height="7" rx="3.5" fill="#00e5ff"/>
+  <!-- Handlebar drop -->
+  <line x1="222" y1="285" x2="228" y2="268" stroke="#00e5ff" stroke-width="6" stroke-linecap="round"/>
+  <line x1="220" y1="268" x2="238" y2="268" stroke="#00e5ff" stroke-width="6" stroke-linecap="round"/>
+  <!-- Crank -->
+  <circle cx="178" cy="345" r="10" fill="#0a0e1a" stroke="#00e5ff" stroke-width="4"/>
+
+  <!-- Rider 1 – aero tuck -->
+  <!-- Legs -->
+  <line x1="178" y1="345" x2="162" y2="375" stroke="#00b8cc" stroke-width="11" stroke-linecap="round"/>
+  <line x1="162" y1="375" x2="148" y2="385" stroke="#00b8cc" stroke-width="9" stroke-linecap="round"/>
+  <line x1="178" y1="345" x2="196" y2="360" stroke="#007a8a" stroke-width="11" stroke-linecap="round" opacity="0.8"/>
+  <line x1="196" y1="360" x2="205" y2="375" stroke="#007a8a" stroke-width="9" stroke-linecap="round" opacity="0.8"/>
+  <!-- Torso (leaning forward aggressively) -->
+  <line x1="168" y1="292" x2="222" y2="272" stroke="#00e5ff" stroke-width="13" stroke-linecap="round"/>
+  <!-- Upper arms to bars -->
+  <line x1="222" y1="272" x2="230" y2="270" stroke="#00e5ff" stroke-width="9" stroke-linecap="round"/>
+  <!-- Head with helmet -->
+  <circle cx="158" cy="278" r="20" fill="#00e5ff"/>
+  <ellipse cx="158" cy="265" rx="20" ry="13" fill="#005f70"/>
+  <rect x="138" y="265" width="40" height="8" rx="4" fill="#005f70"/>
+  <!-- Visor -->
+  <rect x="138" y="273" width="22" height="5" rx="2" fill="#003844" opacity="0.8"/>
+
+  <!-- Speed lines -->
+  <line x1="48" y1="308" x2="88" y2="308" stroke="#00e5ff" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <line x1="40" y1="325" x2="85" y2="325" stroke="#00e5ff" stroke-width="3" stroke-linecap="round" opacity="0.35"/>
+  <line x1="52" y1="342" x2="86" y2="342" stroke="#00e5ff" stroke-width="2" stroke-linecap="round" opacity="0.25"/>
+
+  <!-- ═══ ATHLETE 2 – J-Smooth (orange, right) ═══ -->
+  <!-- Wheels -->
+  <circle cx="272" cy="385" r="55" fill="none" stroke="#ff6b35" stroke-width="8"/>
+  <circle cx="272" cy="385" r="7" fill="#ff6b35"/>
+  <line x1="272" y1="330" x2="272" y2="440" stroke="#ff6b35" stroke-width="3" opacity="0.4"/>
+  <line x1="217" y1="385" x2="327" y2="385" stroke="#ff6b35" stroke-width="3" opacity="0.4"/>
+  <line x1="233" y1="346" x2="311" y2="424" stroke="#ff6b35" stroke-width="3" opacity="0.3"/>
+  <line x1="311" y1="346" x2="233" y2="424" stroke="#ff6b35" stroke-width="3" opacity="0.3"/>
+
+  <circle cx="382" cy="385" r="55" fill="none" stroke="#ff6b35" stroke-width="8"/>
+  <circle cx="382" cy="385" r="7" fill="#ff6b35"/>
+  <line x1="382" y1="330" x2="382" y2="440" stroke="#ff6b35" stroke-width="3" opacity="0.4"/>
+  <line x1="327" y1="385" x2="437" y2="385" stroke="#ff6b35" stroke-width="3" opacity="0.4"/>
+  <line x1="343" y1="346" x2="421" y2="424" stroke="#ff6b35" stroke-width="3" opacity="0.3"/>
+  <line x1="421" y1="346" x2="343" y2="424" stroke="#ff6b35" stroke-width="3" opacity="0.3"/>
+
+  <!-- Bike frame -->
+  <line x1="272" y1="385" x2="320" y2="345" stroke="#ff6b35" stroke-width="7" stroke-linecap="round"/>
+  <line x1="320" y1="345" x2="310" y2="295" stroke="#ff6b35" stroke-width="7" stroke-linecap="round"/>
+  <line x1="310" y1="295" x2="362" y2="290" stroke="#ff6b35" stroke-width="6" stroke-linecap="round"/>
+  <line x1="362" y1="290" x2="320" y2="345" stroke="#ff6b35" stroke-width="7" stroke-linecap="round"/>
+  <line x1="362" y1="290" x2="382" y2="385" stroke="#ff6b35" stroke-width="7" stroke-linecap="round"/>
+  <line x1="310" y1="295" x2="272" y2="385" stroke="#ff6b35" stroke-width="5" stroke-linecap="round"/>
+  <rect x="297" y="288" width="30" height="7" rx="3.5" fill="#ff6b35"/>
+  <line x1="364" y1="285" x2="370" y2="268" stroke="#ff6b35" stroke-width="6" stroke-linecap="round"/>
+  <line x1="362" y1="268" x2="380" y2="268" stroke="#ff6b35" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="320" cy="345" r="10" fill="#0a0e1a" stroke="#ff6b35" stroke-width="4"/>
+
+  <!-- Rider 2 -->
+  <line x1="320" y1="345" x2="304" y2="375" stroke="#cc4400" stroke-width="11" stroke-linecap="round"/>
+  <line x1="304" y1="375" x2="290" y2="385" stroke="#cc4400" stroke-width="9" stroke-linecap="round"/>
+  <line x1="320" y1="345" x2="338" y2="360" stroke="#aa3300" stroke-width="11" stroke-linecap="round" opacity="0.8"/>
+  <line x1="338" y1="360" x2="347" y2="375" stroke="#aa3300" stroke-width="9" stroke-linecap="round" opacity="0.8"/>
+  <!-- Torso -->
+  <line x1="310" y1="292" x2="364" y2="272" stroke="#ff6b35" stroke-width="13" stroke-linecap="round"/>
+  <line x1="364" y1="272" x2="372" y2="270" stroke="#ff6b35" stroke-width="9" stroke-linecap="round"/>
+  <!-- Head -->
+  <circle cx="300" cy="278" r="20" fill="#ff6b35"/>
+  <ellipse cx="300" cy="265" rx="20" ry="13" fill="#882200"/>
+  <rect x="280" y="265" width="40" height="8" rx="4" fill="#882200"/>
+  <rect x="280" y="273" width="22" height="5" rx="2" fill="#551100" opacity="0.8"/>
+
+  <!-- Finish flag top right -->
+  <rect x="448" y="90" width="10" height="70" rx="2" fill="#e8eaf0" opacity="0.8"/>
+  <rect x="458" y="90" width="14" height="14" fill="#e8eaf0"/>
+  <rect x="472" y="90" width="14" height="14" fill="#2a3a5a"/>
+  <rect x="458" y="104" width="14" height="14" fill="#2a3a5a"/>
+  <rect x="472" y="104" width="14" height="14" fill="#e8eaf0"/>
+
+  <!-- Glow -->
+  <ellipse cx="185" cy="440" rx="90" ry="7" fill="#00e5ff" opacity="0.07"/>
+  <ellipse cx="327" cy="440" rx="90" ry="7" fill="#ff6b35" opacity="0.07"/>
+
+  <!-- Bottom label -->
+  <text x="256" y="490" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="700" letter-spacing="6" fill="#4a7ab5">SMITTY × J-SMOOTH</text>
+</svg>
