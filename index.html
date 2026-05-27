@@ -39,7 +39,7 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const RACE_DATE      = new Date("2026-08-31");
+const RACE_DATE      = new Date("2026-08-30");
 const ATHLETES       = ["Smitty", "J-Smooth"];
 const COLORS         = { Smitty: "#00e5ff", "J-Smooth": "#ff6b35" };
 const ICONS          = { Smitty: "🔵", "J-Smooth": "🟠" };
@@ -47,7 +47,7 @@ const SPORT_ICONS    = { Schwimmen:"🏊",Radfahren:"🚴",Laufen:"🏃",Brick:"
 const SPORT_CAT      = { Schwimmen:"tri",Radfahren:"tri",Laufen:"tri",Brick:"tri",Krafttraining:"extra",Basketball:"extra",Padel:"extra",Yoga:"extra",Wandern:"extra",Anderes:"extra" };
 const TRACK_FIELDS   = { Laufen:["distanz","puls_avg","puls_max","pace"],Radfahren:["distanz","puls_avg","puls_max","speed"],Schwimmen:["distanz","schwimmbahnen"],Brick:["distanz","puls_avg"],Wandern:["distanz"] };
 const MOTI           = [
-  {e:"🔥",t:"Diese Woche war ruhig – aber der 31. August wartet nicht! Nächste Woche gebt ihr Gas, oder?"},
+  {e:"🔥",t:"Diese Woche war ruhig – aber der 30. August wartet nicht! Nächste Woche gebt ihr Gas, oder?"},
   {e:"😤",t:"Auch eine leichte Woche bringt euch näher ans Ziel. Jetzt wieder anziehen – gemeinsam!"},
   {e:"💪",t:"Jan Frodeno hatte auch Wochen wo er lieber auf dem Sofa saß. Dann hat er trotzdem trainiert."},
   {e:"🏁",t:"Noch ein paar Wochen bis zum Rennen. Jede Einheit zählt – auch die kleine!"},
@@ -123,7 +123,7 @@ function setState(patch) {
 }
 
 // ── Firebase Listeners ───────────────────────────────────────────────────────
-const entryQ = query(collection(db,"entries"), orderBy("ts","desc"), limit(100));
+const entryQ = query(collection(db,"entries"), orderBy("ts","desc"));
 onSnapshot(entryQ, snap => {
   state.entries = snap.docs.map(d=>({id:d.id,...d.data()}));
   checkMoti(state.entries);
@@ -218,7 +218,7 @@ function render() {
         <div>
           <div style="font-size:10px;letter-spacing:3px;color:#4a7ab5;text-transform:uppercase;margin-bottom:3px;">Sprint Triathlon</div>
           <div style="font-size:22px;font-weight:800;">🏁 ${days} Tage</div>
-          <div style="font-size:12px;color:#6b8ab0;margin-top:1px;">bis 31. August 2026</div>
+          <div style="font-size:12px;color:#6b8ab0;margin-top:1px;">bis 30. August 2026</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:10px;color:#4a7ab5;letter-spacing:2px;margin-bottom:5px;">DU BIST</div>
@@ -284,16 +284,15 @@ function render() {
         <div style="background:#0d1528;border-radius:12px;padding:10px 12px;margin-bottom:10px;border:1px solid #1e2d4a;">
           <div style="font-size:10px;color:${COLORS[s.user]};font-weight:700;letter-spacing:1px;margin-bottom:8px;">📊 TRACKING</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input type="number" step="0.1" placeholder="${s.form.sport==="Schwimmen"?"750":"5.4"}" value="${s.form.distanz}" oninput="setFormField('distanz',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Puls (bpm)</div><input type="number" placeholder="145" value="${s.form.puls_avg}" oninput="setFormField('puls_avg',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Max Puls (bpm)</div><input type="number" placeholder="175" value="${s.form.puls_max}" oninput="setFormField('puls_max',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Pace (min/km)</div><input type="text" placeholder="5:30" value="${s.form.pace}" oninput="setFormField('pace',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Speed (km/h)</div><input type="number" step="0.1" placeholder="27" value="${s.form.speed}" oninput="setFormField('speed',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Bahnen (25m)</div><input type="number" placeholder="30" value="${s.form.schwimmbahnen}" oninput="setFormField('schwimmbahnen',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input type="text" inputmode="decimal" placeholder="${s.form.sport==="Schwimmen"?"z.B. 750":"z.B. 5.4"}" value="${s.form.distanz}" oninput="setFormField('distanz',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 145" value="${s.form.puls_avg}" oninput="setFormField('puls_avg',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Max Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 175" value="${s.form.puls_max}" oninput="setFormField('puls_max',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Pace (min/km)</div><input type="text" placeholder="z.B. 5:30" value="${s.form.pace}" oninput="setFormField('pace',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Speed (km/h)</div><input type="text" inputmode="decimal" placeholder="z.B. 27.5" value="${s.form.speed}" oninput="setFormField('speed',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Bahnen (25m)</div><input type="text" inputmode="numeric" placeholder="z.B. 30" value="${s.form.schwimmbahnen}" oninput="setFormField('schwimmbahnen',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
           </div>
         </div>`:""}
-        <input placeholder="Kommentar (optional)..." value="${s.form.note}" oninput="setFormField('note',this.value)"
-          style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;" />
+        <textarea placeholder="Kommentar – so viel du willst..." oninput="setFormField('note',this.value)" style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;resize:none;min-height:70px;line-height:1.5;">${s.form.note}</textarea>
         <button onclick="saveEntry()" ${s.saving||!s.form.duration?"disabled":""} style="width:100%;background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;opacity:${s.saving?0.6:1};">
           ${s.saving?"Speichern...":"💾 Einheit speichern"}
         </button>
@@ -412,6 +411,14 @@ function render() {
         const totalMin=triMin+extraMin;
         const bySport={};
         mine.forEach(e=>{bySport[e.sport]=(bySport[e.sport]||0)+e.duration;});
+
+        // Total km per discipline (sum all entries with tracking.distanz)
+        const totalSwimM  = mine.filter(e=>e.sport==="Schwimmen"&&e.tracking?.distanz).reduce((a,e)=>a+parseFloat(e.tracking.distanz),0);
+        const totalRideKm = mine.filter(e=>e.sport==="Radfahren"&&e.tracking?.distanz).reduce((a,e)=>a+parseFloat(e.tracking.distanz),0);
+        const totalRunKm  = mine.filter(e=>(e.sport==="Laufen"||e.sport==="Brick")&&e.tracking?.distanz).reduce((a,e)=>a+parseFloat(e.tracking.distanz),0);
+        // Race goals
+        const GOAL_SWIM=0.75, GOAL_RIDE=27, GOAL_RUN=5.4; // km
+        const swimKm = totalSwimM/1000;
         const maxMin=Math.max(...ATHLETES.map(a=>s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+e.duration,0)),1);
         const runs=mine.filter(e=>e.sport==="Laufen"&&e.tracking?.distanz);
         const rides=mine.filter(e=>e.sport==="Radfahren"&&e.tracking?.distanz);
@@ -443,6 +450,42 @@ function render() {
               <div style="font-size:9px;color:#a855f7;font-weight:700;letter-spacing:1px;margin-bottom:2px;">EXTRAS</div>
               <div style="font-size:13px;font-weight:800;">${extraMin} min</div>
             </div>
+          </div>
+
+          <!-- Discipline km progress -->
+          <div style="background:#0d1528;border-radius:12px;padding:11px 13px;margin-bottom:10px;border:1px solid #1e2d4a;">
+            <div style="font-size:9px;color:#facc15;font-weight:700;letter-spacing:1px;margin-bottom:10px;">📍 TRAININGSKILOMETER GESAMT</div>
+
+            ${[
+              {sport:"Schwimmen", icon:"🏊", km: swimKm,      goal: 21,  unit:"km", color:"#818cf8", milestones:[3,6,10,14,18,21]},
+              {sport:"Radfahren", icon:"🚴", km: totalRideKm, goal: 350, unit:"km", color:"#00e5ff", milestones:[50,100,150,200,250,300,350]},
+              {sport:"Laufen",    icon:"🏃", km: totalRunKm,  goal: 84,  unit:"km", color:"#4ade80", milestones:[12,24,36,48,60,72,84]},
+            ].map(disc => {
+              const pct = Math.min((disc.km / disc.goal) * 100, 100);
+              // next milestone
+              const nextMs = disc.milestones.find(m => m > disc.km);
+              const lastMs = [...disc.milestones].reverse().find(m => m <= disc.km);
+              const msLabel = nextMs
+                ? `Nächstes Ziel: <span style="color:${disc.color};font-weight:800;">${nextMs} ${disc.unit}</span>`
+                : `<span style="color:#4ade80;font-weight:800;">✅ Ziel erreicht!</span>`;
+              return `
+              <div style="margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+                  <span style="color:${disc.color};font-weight:700;">${disc.icon} ${disc.sport}</span>
+                  <span style="color:#e8eaf0;font-weight:700;">${disc.km.toFixed(disc.sport==="Schwimmen"?2:1)} <span style="color:#4a7ab5;">/ ${disc.goal} ${disc.unit}</span></span>
+                </div>
+                <!-- Progress bar with milestone markers -->
+                <div style="position:relative;height:10px;background:#1a2540;border-radius:6px;overflow:visible;margin-bottom:5px;">
+                  <div style="height:100%;background:linear-gradient(90deg,${disc.color}88,${disc.color});width:${pct.toFixed(1)}%;border-radius:6px;transition:width 0.5s;"></div>
+                  ${disc.milestones.filter(m=>m<disc.goal).map(m=>{
+                    const mPct = (m/disc.goal)*100;
+                    const reached = disc.km >= m;
+                    return `<div style="position:absolute;top:-2px;left:${mPct.toFixed(1)}%;transform:translateX(-50%);width:3px;height:14px;background:${reached?disc.color:"#2a3a5a"};border-radius:2px;"></div>`;
+                  }).join("")}
+                </div>
+                <div style="font-size:10px;color:#4a7ab5;">${msLabel}</div>
+              </div>`;
+            }).join("")}
           </div>
           ${(bestRun||bestRide||bestSwim||bestPace)?`
           <div style="background:#0d1528;border-radius:9px;padding:8px 10px;margin-bottom:9px;">
