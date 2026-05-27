@@ -23,7 +23,7 @@
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit }
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit, deleteDoc, doc }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ── Firebase Config ──────────────────────────────────────────────────────────
@@ -175,7 +175,12 @@ async function sendMsg() {
   } catch(e) { setState({sending:false}); }
 }
 
-async function fetchAiMoti() {
+async function deleteEntry(id) {
+  if (!confirm("Einheit löschen?")) return;
+  try {
+    await deleteDoc(doc(db, "entries", id));
+  } catch(e) { alert("Fehler beim Löschen"); }
+}
   setState({motiLoading:true});
   try {
     const mon=new Date(); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); mon.setHours(0,0,0,0);
@@ -274,7 +279,7 @@ function render() {
           `).join("")}
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input type="number" placeholder="Dauer (min)" value="${s.form.duration}" oninput="setFormField('duration',this.value)"
+          <input type="text" inputmode="numeric" placeholder="Dauer (min)" value="${s.form.duration}" oninput="setFormField('duration',this.value)"
             style="flex:1;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;" />
           <select onchange="setFormField('emoji',this.value)" style="background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 8px;color:#e8eaf0;font-size:17px;outline:none;">
             ${["💪","🔥","😅","😎","🤩","😤","🥵","💯","🏆","😴"].map(e=>`<option value="${e}" ${s.form.emoji===e?"selected":""}>${e}</option>`).join("")}
@@ -342,7 +347,10 @@ function render() {
               ${e.note?`<div style="font-size:12px;color:#8ba0c0;margin-bottom:3px;">„${e.note}"</div>`:""}
               <div style="font-size:11px;color:#4a7ab5;">⏱ ${e.duration} min · ${fmtTs(e.ts)}</div>
             </div>
-            <div style="font-size:24px;opacity:0.5;margin-left:8px;">${SPORT_ICONS[e.sport]||"⚡"}</div>
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:8px;margin-left:8px;flex-shrink:0;">
+              <div style="font-size:24px;opacity:0.5;">${SPORT_ICONS[e.sport]||"⚡"}</div>
+              <button onclick="deleteEntry('${e.id}')" style="background:#1a2540;border:none;color:#f87171;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;">🗑️</button>
+            </div>
           </div>
         </div>`;
       }).join("")}
@@ -603,7 +611,7 @@ window.setFormSport= (sp)    => setState({form:{...state.form,sport:sp}});
 window.setFormField= (k,v)   => setState({form:{...state.form,[k]:v}});
 window.saveEntry   = saveEntry;
 window.sendMsg     = sendMsg;
-window.fetchAiMoti = fetchAiMoti;
+window.deleteEntry  = deleteEntry;
 
 render();
 </script>
