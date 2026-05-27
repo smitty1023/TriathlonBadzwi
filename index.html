@@ -168,6 +168,13 @@ function showToast(msg){ ss({toast:msg}); setTimeout(()=>ss({toast:null}),2500);
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function render(){
+  // Don't re-render while user is typing in a form field
+  const active = document.activeElement;
+  if(active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA") && S.showLog) {
+    // Only update non-form parts - skip full render
+    // Update tab bar and header only
+    return;
+  }
   const s=S, w=PLAN[s.selWeek], curW=getCurWeek(), other=s.user==="Smitty"?"J-Smooth":"Smitty";
   const tf=TRACK_FIELDS[s.form.sport]||[];
 
@@ -225,7 +232,7 @@ function render(){
           ${["Krafttraining","Basketball","Padel","Yoga","Wandern","Anderes"].map(sp=>`<button onclick="setFormSport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?"#a855f7":"#1a2540"};color:${s.form.sport===sp?"#fff":"#6b8ab0"};">${SPORT_ICONS[sp]} ${sp}</button>`).join("")}
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input type="text" inputmode="numeric" placeholder="Dauer (min)" value="${s.form.duration}" oninput="setFF('duration',this.value)"
+          <input type="text" inputmode="numeric" placeholder="Dauer (min)" value="${s.form.duration}" onblur="setFF('duration',this.value)" onchange="setFF('duration',this.value)"
             style="flex:1;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;" />
           <select onchange="setFF('emoji',this.value)" style="background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 8px;color:#e8eaf0;font-size:17px;outline:none;">
             ${["💪","🔥","😅","😎","🤩","😤","🥵","💯","🏆","😴"].map(e=>`<option value="${e}"${s.form.emoji===e?" selected":""}>${e}</option>`).join("")}
@@ -235,15 +242,15 @@ function render(){
         <div style="background:#0d1528;border-radius:12px;padding:10px 12px;margin-bottom:10px;border:1px solid #1e2d4a;">
           <div style="font-size:10px;color:${COLORS[s.user]};font-weight:700;letter-spacing:1px;margin-bottom:8px;">📊 TRACKING</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input type="text" inputmode="decimal" placeholder="${s.form.sport==="Schwimmen"?"z.B. 750":"z.B. 5.4"}" value="${s.form.distanz}" oninput="setFF('distanz',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 145" value="${s.form.puls_avg}" oninput="setFF('puls_avg',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Max Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 175" value="${s.form.puls_max}" oninput="setFF('puls_max',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Pace (min/km)</div><input type="text" placeholder="z.B. 5:30" value="${s.form.pace}" oninput="setFF('pace',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Speed (km/h)</div><input type="text" inputmode="decimal" placeholder="z.B. 27.5" value="${s.form.speed}" oninput="setFF('speed',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Bahnen (25m)</div><input type="text" inputmode="numeric" placeholder="z.B. 30" value="${s.form.schwimmbahnen}" oninput="setFF('schwimmbahnen',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input type="text" inputmode="decimal" placeholder="${s.form.sport==="Schwimmen"?"z.B. 750":"z.B. 5.4"}" value="${s.form.distanz}" onblur="setFF('distanz',this.value)" onchange="setFF('distanz',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 145" value="${s.form.puls_avg}" onblur="setFF('puls_avg',this.value)" onchange="setFF('puls_avg',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Max Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 175" value="${s.form.puls_max}" onblur="setFF('puls_max',this.value)" onchange="setFF('puls_max',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Pace (min/km)</div><input type="text" placeholder="z.B. 5:30" value="${s.form.pace}" onblur="setFF('pace',this.value)" onchange="setFF('pace',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Speed (km/h)</div><input type="text" inputmode="decimal" placeholder="z.B. 27.5" value="${s.form.speed}" onblur="setFF('speed',this.value)" onchange="setFF('speed',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Bahnen (25m)</div><input type="text" inputmode="numeric" placeholder="z.B. 30" value="${s.form.schwimmbahnen}" onblur="setFF('schwimmbahnen',this.value)" onchange="setFF('schwimmbahnen',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
           </div>
         </div>`:""}
-        <textarea placeholder="Kommentar – so viel du willst..." oninput="setFF('note',this.value)" style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;resize:none;min-height:70px;line-height:1.5;">${s.form.note}</textarea>
+        <textarea placeholder="Kommentar – so viel du willst..." onblur="setFF('note',this.value)" onchange="setFF('note',this.value)" style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;resize:none;min-height:70px;line-height:1.5;">${s.form.note}</textarea>
         <button onclick="saveEntry()" ${s.saving||!s.form.duration?"disabled":""} style="width:100%;background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;opacity:${s.saving?0.6:1};">
           ${s.saving?"Speichern...":"💾 Einheit speichern"}
         </button>
