@@ -13,20 +13,18 @@
   <style>
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
     body { background: #0a0e1a; font-family: -apple-system, 'Segoe UI', sans-serif; color: #e8eaf0; }
-    input, select, button { font-family: inherit; }
+    input, select, button, textarea { font-family: inherit; }
     ::-webkit-scrollbar { width: 0; }
   </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="root"><div style="color:#4a7ab5;text-align:center;padding:40px;font-size:14px;">Laden...</div></div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, limit, deleteDoc, doc }
+import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// ── Firebase Config ──────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyCK3_0SUOrmRVsNCCXGJmXYwSKNvaBJO-8",
   authDomain: "triathlon-455c8.firebaseapp.com",
@@ -39,182 +37,141 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const RACE_DATE      = new Date("2026-08-30");
-const ATHLETES       = ["Smitty", "J-Smooth"];
-const COLORS         = { Smitty: "#00e5ff", "J-Smooth": "#ff6b35" };
-const ICONS          = { Smitty: "🔵", "J-Smooth": "🟠" };
-const SPORT_ICONS    = { Schwimmen:"🏊",Radfahren:"🚴",Laufen:"🏃",Brick:"🔥",Krafttraining:"🏋️",Basketball:"🏀",Padel:"🎾",Yoga:"🧘",Wandern:"🥾",Anderes:"⚡" };
-const SPORT_CAT      = { Schwimmen:"tri",Radfahren:"tri",Laufen:"tri",Brick:"tri",Krafttraining:"extra",Basketball:"extra",Padel:"extra",Yoga:"extra",Wandern:"extra",Anderes:"extra" };
-const TRACK_FIELDS   = { Laufen:["distanz","puls_avg","puls_max","pace"],Radfahren:["distanz","puls_avg","puls_max","speed"],Schwimmen:["distanz","schwimmbahnen"],Brick:["distanz","puls_avg"],Wandern:["distanz"] };
-const MOTI           = [
-  {e:"🔥",t:"Diese Woche war ruhig – aber der 30. August wartet nicht! Nächste Woche gebt ihr Gas, oder?"},
-  {e:"😤",t:"Auch eine leichte Woche bringt euch näher ans Ziel. Jetzt wieder anziehen – gemeinsam!"},
-  {e:"💪",t:"Jan Frodeno hatte auch Wochen wo er lieber auf dem Sofa saß. Dann hat er trotzdem trainiert."},
-  {e:"🏁",t:"Noch ein paar Wochen bis zum Rennen. Jede Einheit zählt – auch die kleine!"},
-  {e:"🤜🤛",t:"Einer muss anfangen. Und dann zieht der andere nach. Wer macht heute den ersten Schritt?"},
-  {e:"😎",t:"Padel und Basketball zählen auch – aber der Triathlon trainiert sich nicht von selbst!"},
+const RACE_DATE  = new Date("2026-08-30");
+const ATHLETES   = ["Smitty","J-Smooth"];
+const COLORS     = { Smitty:"#00e5ff", "J-Smooth":"#ff6b35" };
+const ICONS      = { Smitty:"🔵", "J-Smooth":"🟠" };
+const SPORT_ICONS= { Schwimmen:"🏊",Radfahren:"🚴",Laufen:"🏃",Brick:"🔥",Krafttraining:"🏋️",Basketball:"🏀",Padel:"🎾",Yoga:"🧘",Wandern:"🥾",Anderes:"⚡" };
+const SPORT_CAT  = { Schwimmen:"tri",Radfahren:"tri",Laufen:"tri",Brick:"tri",Krafttraining:"extra",Basketball:"extra",Padel:"extra",Yoga:"extra",Wandern:"extra",Anderes:"extra" };
+const TRACK_FIELDS={ Laufen:["distanz","puls_avg","puls_max","pace"],Radfahren:["distanz","puls_avg","puls_max","speed"],Schwimmen:["distanz","schwimmbahnen"],Brick:["distanz","puls_avg"],Wandern:["distanz"] };
+const MOTI=[
+  {e:"🔥",t:"Diese Woche war ruhig – aber der 30. August wartet nicht!"},
+  {e:"😤",t:"Auch eine leichte Woche bringt euch näher ans Ziel. Jetzt wieder anziehen!"},
+  {e:"💪",t:"Jan Frodeno hatte auch schwache Wochen. Dann hat er trotzdem trainiert."},
+  {e:"🏁",t:"Jede Einheit zählt – auch die kleine. Macht euch warm!"},
+  {e:"🤜🤛",t:"Einer muss anfangen – und dann zieht der andere nach!"},
+  {e:"😎",t:"Padel zählt auch – aber der Triathlon trainiert sich nicht von selbst!"},
 ];
-// 🎂 Birthday – nach Samstag: BIRTHDAY = null setzen
-const BIRTHDAY = { athlete: "J-Smooth", until: new Date("2026-05-25") };
+const BIRTHDAY = { athlete:"J-Smooth", until: new Date("2026-05-31") };
 
-function daysLeft() { return Math.ceil((RACE_DATE - new Date()) / 86400000); }
-function showBday()  { return BIRTHDAY && new Date() <= BIRTHDAY.until; }
+function daysLeft(){ return Math.ceil((RACE_DATE-new Date())/86400000); }
+function showBday(){ return BIRTHDAY && new Date()<=BIRTHDAY.until; }
+function fmtTs(ts){
+  if(!ts||!ts.toDate) return "";
+  const d=ts.toDate();
+  return d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
+}
+function fmtDate(d){ return d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}); }
 
-// ── Training Plan ────────────────────────────────────────────────────────────
-const PLAN_START = new Date("2026-05-25");
-const PHASES = [
-  {name:"Basis",weeks:[1,2,3,4],color:"#4ade80"},
-  {name:"Aufbau",weeks:[5,6,7,8],color:"#facc15"},
-  {name:"Intensität",weeks:[9,10,11,12],color:"#fb923c"},
-  {name:"Peak & Taper",weeks:[13,14,15,16],color:"#f87171"},
+// ── Plan ─────────────────────────────────────────────────────────────────────
+const PLAN_START=new Date("2026-05-25");
+const PHASES=[{name:"Basis",weeks:[1,2,3,4],color:"#4ade80"},{name:"Aufbau",weeks:[5,6,7,8],color:"#facc15"},{name:"Intensität",weeks:[9,10,11,12],color:"#fb923c"},{name:"Peak & Taper",weeks:[13,14,15,16],color:"#f87171"}];
+const SESSIONS=[
+  [{day:"Di",sport:"Schwimmen",desc:"Technik-Schwimmen",dur:30,detail:"4×100m Pause 30s, Fokus Gleiten"},{day:"Do",sport:"Laufen",desc:"Lockerer Dauerlauf",dur:35,detail:"Puls 130-140"},{day:"Sa",sport:"Radfahren",desc:"Grundlagenfahrt",dur:60,detail:"Zone 2, Tritt ≥85 rpm"},{day:"So",sport:"Laufen",desc:"Langer Lauf",dur:45,detail:"Sehr locker, Puls <140"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Ausdauer-Schwimmen",dur:35,detail:"600m kontinuierlich, 4×50m Sprints"},{day:"Do",sport:"Radfahren",desc:"Intervallfahrt",dur:45,detail:"5×3 min Zone 3"},{day:"Sa",sport:"Laufen",desc:"Tempodauerlauf",dur:40,detail:"Puls 145-155"},{day:"So",sport:"Schwimmen",desc:"Regeneration",dur:30,detail:"Ruhiges Schwimmen"}],
+  [{day:"Di",sport:"Laufen",desc:"Fahrtspiel",dur:40,detail:"5×2 min flott / 2 min traben"},{day:"Do",sport:"Schwimmen",desc:"Streckenausdauer",dur:35,detail:"750m non-stop, Rennpace"},{day:"Sa",sport:"Radfahren",desc:"Lange Fahrt",dur:75,detail:"Zone 2, Verpflegung üben"},{day:"So",sport:"Laufen",desc:"Easy Run",dur:30,detail:"Sehr locker"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Deload – Technik",dur:25,detail:"Nur Technik, kein Druck"},{day:"Do",sport:"Laufen",desc:"Deload – locker",dur:30,detail:"Puls <130"},{day:"Sa",sport:"Radfahren",desc:"Deload – Fahrt",dur:45,detail:"Zone 1-2, locker rollen"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Intervall-Schwimmen",dur:40,detail:"8×100m Rennpace"},{day:"Do",sport:"Radfahren",desc:"Schwelle",dur:50,detail:"3×8 min Schwelle"},{day:"Sa",sport:"Brick",desc:"Brick-Training",dur:60,detail:"45 min Rad + 15 min Laufen"},{day:"So",sport:"Laufen",desc:"Langer Lauf",dur:50,detail:"Zone 2"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Rennsimulation",dur:35,detail:"750m Rennpace, 4×50m Speed"},{day:"Do",sport:"Laufen",desc:"Tempointervalle",dur:45,detail:"3×1 km Renntempo"},{day:"Sa",sport:"Radfahren",desc:"Hügel",dur:60,detail:"Kraft und Technik"},{day:"So",sport:"Schwimmen",desc:"Aerob",dur:35,detail:"1200m locker"}],
+  [{day:"Di",sport:"Brick",desc:"Kurz-Brick",dur:55,detail:"30 min Rad + 20 min Laufen"},{day:"Do",sport:"Schwimmen",desc:"Sprint-Intervalle",dur:35,detail:"10×50m Sprint"},{day:"Sa",sport:"Radfahren",desc:"Lange Fahrt",dur:90,detail:"27km+ Strecke"},{day:"So",sport:"Laufen",desc:"Mittellanger Lauf",dur:50,detail:"Puls 145"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Deload",dur:25,detail:"Locker"},{day:"Do",sport:"Laufen",desc:"Deload",dur:30,detail:"Sehr locker"},{day:"Sa",sport:"Radfahren",desc:"Deload",dur:45,detail:"Zone 1"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Race-Pace",dur:40,detail:"2×750m Rennpace"},{day:"Do",sport:"Radfahren",desc:"VO2max",dur:55,detail:"6×4 min VO2max"},{day:"Sa",sport:"Brick",desc:"Rennsimulation",dur:70,detail:"27km Rad + 5,4km Laufen!"},{day:"So",sport:"Laufen",desc:"Easy Recovery",dur:30,detail:"Puls <130"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Strecke + Speed",dur:40,detail:"500m Rennpace, 10×50m"},{day:"Do",sport:"Laufen",desc:"5km-Test",dur:35,detail:"5km Zeitnahme!"},{day:"Sa",sport:"Radfahren",desc:"Rennstrecke",dur:75,detail:"27km Zeitnahme"},{day:"So",sport:"Schwimmen",desc:"Regeneration",dur:30,detail:"Locker"}],
+  [{day:"Di",sport:"Brick",desc:"Wettkampf-Brick",dur:75,detail:"Komplette Distanz simulieren"},{day:"Do",sport:"Schwimmen",desc:"Technik & Speed",dur:35,detail:"Fokus Wende"},{day:"Sa",sport:"Radfahren",desc:"Intervallfahrt",dur:60,detail:"5×5 min Schwelle"},{day:"So",sport:"Laufen",desc:"Tempodauerlauf",dur:40,detail:"Puls 150-160"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Deload",dur:25,detail:"Locker"},{day:"Do",sport:"Laufen",desc:"Deload",dur:25,detail:"Locker"},{day:"Sa",sport:"Radfahren",desc:"Deload",dur:40,detail:"Locker"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Kurze Schwelle",dur:30,detail:"4×100m Rennpace"},{day:"Do",sport:"Radfahren",desc:"Kurze Intervalle",dur:40,detail:"3×5 min Zone 4"},{day:"Sa",sport:"Brick",desc:"Kurz-Brick",dur:50,detail:"20 min Rad + 15 min Laufen"},{day:"So",sport:"Laufen",desc:"Locker",dur:25,detail:"Sehr entspannt"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Renngefühl",dur:25,detail:"750m Rennpace"},{day:"Do",sport:"Laufen",desc:"Lockerheit",dur:25,detail:"Steigerungen"},{day:"Sa",sport:"Radfahren",desc:"Activation",dur:35,detail:"3×2 min flottes Treten"}],
+  [{day:"Di",sport:"Schwimmen",desc:"Super kurz",dur:20,detail:"400m locker"},{day:"Do",sport:"Laufen",desc:"Joggen",dur:15,detail:"15 min locker"}],
+  [{day:"Mo",sport:"Schwimmen",desc:"Mini-Aktivierung",dur:15,detail:"300m locker"},{day:"Di",sport:"Laufen",desc:"Mini-Aktivierung",dur:10,detail:"10 min Traben"},{day:"So",sport:"Radfahren",desc:"🏁 RENNTAG!",dur:0,detail:"Sprint-Triathlon – alles geben!"}],
 ];
-const SESSIONS = [
-  [{day:"Di",sport:"Schwimmen",desc:"Technik-Schwimmen",dur:30,detail:"4×100m Pause 30s, Fokus Gleiten"},{day:"Do",sport:"Laufen",desc:"Lockerer Dauerlauf",dur:35,detail:"Puls 130-140, Grundlage aufbauen"},{day:"Sa",sport:"Radfahren",desc:"Grundlagenfahrt",dur:60,detail:"Zone 2, flache Strecke, Tritt ≥85 rpm"},{day:"So",sport:"Laufen",desc:"Langer Lauf",dur:45,detail:"Sehr locker, Puls <140"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Ausdauer-Schwimmen",dur:35,detail:"600m kontinuierlich, danach 4×50m Sprints"},{day:"Do",sport:"Radfahren",desc:"Intervallfahrt",dur:45,detail:"5×3 min Zone 3, Pause 2 min"},{day:"Sa",sport:"Laufen",desc:"Tempodauerlauf",dur:40,detail:"Mittelstrecke, Puls 145-155"},{day:"So",sport:"Schwimmen",desc:"Regeneration",dur:30,detail:"Ruhiges Schwimmen, Technikfokus"}],
-  [{day:"Di",sport:"Laufen",desc:"Fahrtspiel",dur:40,detail:"10 min warm up, 5×2 min flott / 2 min traben"},{day:"Do",sport:"Schwimmen",desc:"Streckenausdauer",dur:35,detail:"750m non-stop, Rennpace"},{day:"Sa",sport:"Radfahren",desc:"Lange Fahrt",dur:75,detail:"Zone 2, Verpflegung üben"},{day:"So",sport:"Laufen",desc:"Easy Run",dur:30,detail:"Sehr locker, frisch bleiben"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Deload – Technik",dur:25,detail:"Nur Technik, kein Druck"},{day:"Do",sport:"Laufen",desc:"Deload – locker",dur:30,detail:"Puls <130, Regeneration"},{day:"Sa",sport:"Radfahren",desc:"Deload – Fahrt",dur:45,detail:"Zone 1-2, locker rollen"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Intervall-Schwimmen",dur:40,detail:"8×100m mit 20s Pause, Rennpace"},{day:"Do",sport:"Radfahren",desc:"Schwelle",dur:50,detail:"3×8 min an der Schwelle, Pause 4 min"},{day:"Sa",sport:"Brick",desc:"Brick-Training",dur:60,detail:"45 min Rad + sofort 15 min Laufen"},{day:"So",sport:"Laufen",desc:"Langer Lauf",dur:50,detail:"Zone 2, konstantes Tempo"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Rennsimulation",dur:35,detail:"750m Rennpace, dann 4×50m Speed"},{day:"Do",sport:"Laufen",desc:"Tempointervalle",dur:45,detail:"3×1 km Renntempo, Pause 2 min"},{day:"Sa",sport:"Radfahren",desc:"Hügel",dur:60,detail:"Hügel suchen, Kraft und Technik"},{day:"So",sport:"Schwimmen",desc:"Aerob",dur:35,detail:"1200m locker, Technikfokus"}],
-  [{day:"Di",sport:"Brick",desc:"Kurz-Brick",dur:55,detail:"30 min Rad + 20 min Laufen, Wettkampfpace"},{day:"Do",sport:"Schwimmen",desc:"Sprint-Intervalle",dur:35,detail:"10×50m Sprint, Pause 30s"},{day:"Sa",sport:"Radfahren",desc:"Lange Fahrt",dur:90,detail:"Zone 2, Ernährung üben, 27km+ Strecke"},{day:"So",sport:"Laufen",desc:"Mittellanger Lauf",dur:50,detail:"Gleichmäßiges Tempo, Puls 145"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Deload",dur:25,detail:"Locker, Technik"},{day:"Do",sport:"Laufen",desc:"Deload",dur:30,detail:"Sehr locker"},{day:"Sa",sport:"Radfahren",desc:"Deload",dur:45,detail:"Zone 1, Regeneration"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Race-Pace-Schwimmen",dur:40,detail:"2×750m Rennpace, Pause 3 min"},{day:"Do",sport:"Radfahren",desc:"VO2max Intervalle",dur:55,detail:"6×4 min VO2max, Pause 3 min"},{day:"Sa",sport:"Brick",desc:"Rennsimulation Brick",dur:70,detail:"27 km Rad + 5,4 km Laufen – Rennpace!"},{day:"So",sport:"Laufen",desc:"Easy Recovery",dur:30,detail:"Sehr locker, Puls <130"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Strecke + Speed",dur:40,detail:"500m Rennpace, 10×50m Max"},{day:"Do",sport:"Laufen",desc:"5km-Test",dur:35,detail:"5 km so schnell wie möglich – Zeitnahme!"},{day:"Sa",sport:"Radfahren",desc:"Rennstrecke",dur:75,detail:"27 km Rennstrecke, Zeitnahme"},{day:"So",sport:"Schwimmen",desc:"Regeneration",dur:30,detail:"Locker, Dehnen im Wasser"}],
-  [{day:"Di",sport:"Brick",desc:"Wettkampf-Brick",dur:75,detail:"Komplette Sprint-Distanz simulieren"},{day:"Do",sport:"Schwimmen",desc:"Technik & Speed",dur:35,detail:"Fokus Wende, Startsprung"},{day:"Sa",sport:"Radfahren",desc:"Intervallfahrt",dur:60,detail:"5×5 min Schwelle, Pause 3 min"},{day:"So",sport:"Laufen",desc:"Tempodauerlauf",dur:40,detail:"Puls 150-160, Rennpace Feeling"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Deload",dur:25,detail:"Locker"},{day:"Do",sport:"Laufen",desc:"Deload",dur:25,detail:"Locker"},{day:"Sa",sport:"Radfahren",desc:"Deload",dur:40,detail:"Locker rollen"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Kurze Schwelle",dur:30,detail:"4×100m Rennpace, dann locker"},{day:"Do",sport:"Radfahren",desc:"Kurze Intervalle",dur:40,detail:"3×5 min Zone 4, Beine frisch halten"},{day:"Sa",sport:"Brick",desc:"Kurz-Brick",dur:50,detail:"20 min Rad Rennpace + 15 min Laufen"},{day:"So",sport:"Laufen",desc:"Locker",dur:25,detail:"Sehr entspannt"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Renngefühl",dur:25,detail:"750m Rennpace – ein letztes Mal"},{day:"Do",sport:"Laufen",desc:"Lockerheit",dur:25,detail:"Kurze Steigerungen, Beine wach"},{day:"Sa",sport:"Radfahren",desc:"Activation",dur:35,detail:"Locker mit 3×2 min flottes Treten"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Super kurz",dur:20,detail:"400m locker, Technik genießen"},{day:"Do",sport:"Laufen",desc:"Joggen",dur:15,detail:"15 min locker, Beine ausschütteln"}],
-  [{day:"Mo",sport:"Schwimmen",desc:"Mini-Aktivierung",dur:15,detail:"300m locker, lächeln"},{day:"Di",sport:"Laufen",desc:"Mini-Aktivierung",dur:10,detail:"10 min lockeres Traben"},{day:"So",sport:"Radfahren",desc:"🏁 RENNTAG!",dur:0,detail:"Sprint-Triathlon – alles geben!"}],
-];
-function getPlan() {
+function getPlan(){
   return Array.from({length:16},(_,w)=>{
     const d=new Date(PLAN_START); d.setDate(d.getDate()+w*7);
     const phase=PHASES.find(p=>p.weeks.includes(w+1));
     return {weekNum:w+1,phase:phase.name,color:phase.color,start:d,sessions:SESSIONS[w],deload:[4,8,12].includes(w+1)};
   });
 }
-function getCurWeek() { return Math.max(0,Math.min(Math.floor((new Date()-PLAN_START)/604800000),15)); }
-const PLAN = getPlan();
+function getCurWeek(){ return Math.max(0,Math.min(Math.floor((new Date()-PLAN_START)/604800000),15)); }
+const PLAN=getPlan();
 
-// ── State ────────────────────────────────────────────────────────────────────
-let state = {
-  tab: "feed",
-  user: "Smitty",
-  entries: [],
-  messages: [],
-  showLog: false,
-  selWeek: getCurWeek(),
-  form: emptyForm("Laufen"),
-  saving: false,
-  sending: false,
-  toast: null,
-  moti: null,
-  motiLoading: false,
-  chatInput: "",
+// ── State ─────────────────────────────────────────────────────────────────────
+let S={
+  tab:"feed", user:"Smitty", entries:[], messages:[],
+  showLog:false, selWeek:getCurWeek(),
+  form:{sport:"Laufen",duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""},
+  saving:false, sending:false, toast:null, moti:null, motiLoading:false, chatInput:"",
 };
 
-function emptyForm(sport) {
-  return {sport,duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""};
-}
+function emptyForm(sport){ return {sport,duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""}; }
+function ss(patch){ S={...S,...patch}; render(); }
 
-function setState(patch) {
-  state = {...state,...patch};
-  render();
-}
-
-// ── Firebase Listeners ───────────────────────────────────────────────────────
-const entryQ = query(collection(db,"entries"), orderBy("ts","desc"));
-onSnapshot(entryQ, snap => {
-  state.entries = snap.docs.map(d=>({id:d.id,...d.data()}));
-  checkMoti(state.entries);
+// ── Firebase listeners ────────────────────────────────────────────────────────
+onSnapshot(query(collection(db,"entries"),orderBy("ts","desc")), snap=>{
+  S.entries=snap.docs.map(d=>({id:d.id,...d.data()}));
+  checkMoti(S.entries);
   render();
 });
-const msgQ = query(collection(db,"messages"), orderBy("ts","asc"), limit(200));
-onSnapshot(msgQ, snap => {
-  state.messages = snap.docs.map(d=>({id:d.id,...d.data()}));
+onSnapshot(query(collection(db,"messages"),orderBy("ts","asc")), snap=>{
+  S.messages=snap.docs.map(d=>({id:d.id,...d.data()}));
   render();
-  setTimeout(()=>{ const b=document.getElementById("chatBottom"); if(b) b.scrollIntoView({behavior:"smooth"}); },50);
+  setTimeout(()=>document.getElementById("chatBottom")?.scrollIntoView({behavior:"smooth"}),50);
 });
 
-function checkMoti(entries) {
+function checkMoti(all){
   const mon=new Date(); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); mon.setHours(0,0,0,0);
-  const triSports=["Schwimmen","Radfahren","Laufen","Brick"];
-  const wkTri=entries.filter(e=>e.ts?.toDate?.()>=mon&&triSports.includes(e.sport));
-  if(new Date().getDay()>=3&&wkTri.length<2&&!state.moti) {
-    state.moti=MOTI[Math.floor(Math.random()*MOTI.length)];
-  }
+  const wkTri=all.filter(e=>e.ts?.toDate?.()>=mon&&["Schwimmen","Radfahren","Laufen","Brick"].includes(e.sport));
+  if(new Date().getDay()>=3&&wkTri.length<2&&!S.moti) S.moti=MOTI[Math.floor(Math.random()*MOTI.length)];
 }
 
-async function saveEntry() {
-  if(!state.form.duration) return;
-  setState({saving:true});
-  try {
-    const f=state.form;
+async function saveEntry(){
+  if(!S.form.duration) return;
+  ss({saving:true});
+  try{
+    const f=S.form;
     await addDoc(collection(db,"entries"),{
-      athlete:state.user, sport:f.sport, duration:parseInt(f.duration),
-      note:f.note, emoji:f.emoji, ts:serverTimestamp(),
-      tracking:{
-        distanz:f.distanz?parseFloat(f.distanz):null,
-        puls_avg:f.puls_avg?parseInt(f.puls_avg):null,
-        puls_max:f.puls_max?parseInt(f.puls_max):null,
-        pace:f.pace||null, speed:f.speed?parseFloat(f.speed):null,
-        schwimmbahnen:f.schwimmbahnen?parseInt(f.schwimmbahnen):null,
-      },
+      athlete:S.user,sport:f.sport,duration:f.duration,note:f.note,emoji:f.emoji,ts:serverTimestamp(),
+      tracking:{distanz:f.distanz||null,puls_avg:f.puls_avg||null,puls_max:f.puls_max||null,pace:f.pace||null,speed:f.speed||null,schwimmbahnen:f.schwimmbahnen||null},
     });
-    showToast(ICONS[state.user]+" Einheit gespeichert!");
-    setState({form:emptyForm("Laufen"),showLog:false,tab:"feed",saving:false});
-  } catch(e) { showToast("❌ Fehler"); setState({saving:false}); }
+    showToast(ICONS[S.user]+" Einheit gespeichert!");
+    ss({form:emptyForm("Laufen"),showLog:false,tab:"feed",saving:false});
+  }catch(e){ showToast("❌ Fehler"); ss({saving:false}); }
 }
 
-async function sendMsg() {
-  const text=state.chatInput.trim(); if(!text) return;
-  setState({sending:true});
-  try {
-    await addDoc(collection(db,"messages"),{author:state.user,text,ts:serverTimestamp()});
-    setState({chatInput:"",sending:false});
-  } catch(e) { setState({sending:false}); }
+async function delEntry(id){
+  if(!confirm("Einheit löschen?")) return;
+  try{ await deleteDoc(doc(db,"entries",id)); }
+  catch(e){ alert("Fehler beim Löschen"); }
 }
 
-async function deleteEntry(id) {
-  if (!confirm("Einheit löschen?")) return;
-  try {
-    await deleteDoc(doc(db, "entries", id));
-  } catch(e) { alert("Fehler beim Löschen"); }
+async function sendMsg(){
+  const text=S.chatInput.trim(); if(!text) return;
+  ss({sending:true});
+  try{ await addDoc(collection(db,"messages"),{author:S.user,text,ts:serverTimestamp()}); ss({chatInput:"",sending:false}); }
+  catch(e){ ss({sending:false}); }
 }
-  setState({motiLoading:true});
-  try {
+
+async function fetchAiMoti(){
+  ss({motiLoading:true});
+  try{
     const mon=new Date(); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); mon.setHours(0,0,0,0);
-    const tri=["Schwimmen","Radfahren","Laufen","Brick"];
-    const wk=state.entries.filter(e=>e.ts?.toDate?.()>=mon);
-    const tc=wk.filter(e=>tri.includes(e.sport)).length;
-    const ec=wk.filter(e=>!tri.includes(e.sport)).length;
-    const prompt=`Du bist Triathlon-Coach für Smitty und J-Smooth, die am 31.8.2026 ihren ersten Sprint-Triathlon machen. Noch ${daysLeft()} Tage. Diese Woche: ${tc} Tri-Einheiten, ${ec} andere. Kurze, motivierende, humorvolle Nachricht auf Deutsch (2-3 Sätze). Direkt anfangen.`;
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,messages:[{role:"user",content:prompt}]})});
+    const wk=S.entries.filter(e=>e.ts?.toDate?.()>=mon);
+    const tc=wk.filter(e=>["Schwimmen","Radfahren","Laufen","Brick"].includes(e.sport)).length;
+    const ec=wk.filter(e=>!["Schwimmen","Radfahren","Laufen","Brick"].includes(e.sport)).length;
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,messages:[{role:"user",content:`Du bist Triathlon-Coach für Smitty und J-Smooth. Sprint-Triathlon am 30.8.2026, noch ${daysLeft()} Tage. Diese Woche: ${tc} Tri-Einheiten, ${ec} andere. Kurze, humorvolle Motivation auf Deutsch (2-3 Sätze). Direkt anfangen.`}]})});
     const data=await res.json();
     const text=data.content?.map(c=>c.text||"").join("")||"";
-    if(text) setState({moti:{e:"🤖",t:text.trim(),ai:true},motiLoading:false});
-  } catch(e) { setState({moti:MOTI[0],motiLoading:false}); }
+    if(text) ss({moti:{e:"🤖",t:text.trim(),ai:true},motiLoading:false});
+  }catch(e){ ss({moti:MOTI[0],motiLoading:false}); }
 }
 
-function showToast(msg) {
-  setState({toast:msg});
-  setTimeout(()=>setState({toast:null}),2500);
-}
+function showToast(msg){ ss({toast:msg}); setTimeout(()=>ss({toast:null}),2500); }
 
-// ── Render ───────────────────────────────────────────────────────────────────
-function render() {
-  const root=document.getElementById("root");
-  const s=state;
-  const days=daysLeft();
-  const week=PLAN[s.selWeek];
-  const curW=getCurWeek();
-  const other=s.user==="Smitty"?"J-Smooth":"Smitty";
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){
+  const s=S, w=PLAN[s.selWeek], curW=getCurWeek(), other=s.user==="Smitty"?"J-Smooth":"Smitty";
   const tf=TRACK_FIELDS[s.form.sport]||[];
 
-  const fmtDate=d=>d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
-  const fmtTs=ts=>{ if(!ts?.toDate) return ""; const d=ts.toDate(); return d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); };
-
-  root.innerHTML = `
+  document.getElementById("root").innerHTML=`
   <div style="min-height:100vh;background:#0a0e1a;color:#e8eaf0;max-width:480px;margin:0 auto;padding-bottom:80px;">
 
     <!-- HEADER -->
@@ -222,7 +179,7 @@ function render() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <div style="font-size:10px;letter-spacing:3px;color:#4a7ab5;text-transform:uppercase;margin-bottom:3px;">Sprint Triathlon</div>
-          <div style="font-size:22px;font-weight:800;">🏁 ${days} Tage</div>
+          <div style="font-size:22px;font-weight:800;">🏁 ${daysLeft()} Tage</div>
           <div style="font-size:12px;color:#6b8ab0;margin-top:1px;">bis 30. August 2026</div>
         </div>
         <div style="text-align:right;">
@@ -232,8 +189,7 @@ function render() {
               <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
                 <button onclick="setUser('${a}')" style="padding:5px 11px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:${s.user===a?COLORS[a]:"#1a2540"};color:${s.user===a?"#0a0e1a":"#6b8ab0"};">${ICONS[a]} ${a}</button>
                 ${showBday()&&a===BIRTHDAY.athlete?`<div style="font-size:10px;color:#f9a8d4;font-weight:700;">🎂 Happy Birthday!</div>`:""}
-              </div>
-            `).join("")}
+              </div>`).join("")}
           </div>
         </div>
       </div>
@@ -242,8 +198,7 @@ function render() {
           <div style="flex:1;background:#0d1528;border-radius:10px;padding:6px 0;border:1px solid #1e2d4a;text-align:center;">
             <div style="font-size:15px;">${ic}</div>
             <div style="font-size:11px;font-weight:700;color:#00e5ff;">${d}</div>
-          </div>
-        `).join("")}
+          </div>`).join("")}
       </div>
     </div>
 
@@ -251,68 +206,62 @@ function render() {
 
     <div style="padding:15px;">
 
-    <!-- FEED -->
+    <!-- ══ FEED ══ -->
     ${s.tab==="feed"?`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-size:17px;font-weight:800;">Activity Feed</div>
-        <button onclick="toggleLog()" style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:20px;padding:7px 15px;font-weight:800;font-size:12px;cursor:pointer;">
-          ${s.showLog?"✕ Schließen":"+ Einheit"}
-        </button>
+        <button onclick="ss({showLog:!S.showLog})" style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:20px;padding:7px 15px;font-weight:800;font-size:12px;cursor:pointer;">${s.showLog?"✕ Schließen":"+ Einheit"}</button>
       </div>
 
       ${s.showLog?`
       <div style="background:#111c35;border-radius:16px;padding:15px;border:1px solid #1e2d4a;margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <div style="font-size:13px;font-weight:700;color:${COLORS[s.user]};">${ICONS[s.user]} ${s.user}s Einheit</div>
-          <button onclick="setState({showLog:false})" style="background:#1a2540;border:none;color:#6b8ab0;border-radius:20px;width:28px;height:28px;font-size:15px;cursor:pointer;">✕</button>
+          <button onclick="ss({showLog:false})" style="background:#1a2540;border:none;color:#6b8ab0;border-radius:20px;width:28px;height:28px;font-size:15px;cursor:pointer;">✕</button>
         </div>
         <div style="font-size:10px;color:#4a7ab5;font-weight:700;letter-spacing:1px;margin-bottom:6px;">TRIATHLON</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
-          ${["Schwimmen","Radfahren","Laufen","Brick"].map(sp=>`
-            <button onclick="setFormSport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?COLORS[s.user]:"#1a2540"};color:${s.form.sport===sp?"#0a0e1a":"#6b8ab0"};">${SPORT_ICONS[sp]} ${sp}</button>
-          `).join("")}
+          ${["Schwimmen","Radfahren","Laufen","Brick"].map(sp=>`<button onclick="setFormSport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?COLORS[s.user]:"#1a2540"};color:${s.form.sport===sp?"#0a0e1a":"#6b8ab0"};">${SPORT_ICONS[sp]} ${sp}</button>`).join("")}
         </div>
         <div style="font-size:10px;color:#4a7ab5;font-weight:700;letter-spacing:1px;margin-bottom:6px;">EXTRAS</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
-          ${["Krafttraining","Basketball","Padel","Yoga","Wandern","Anderes"].map(sp=>`
-            <button onclick="setFormSport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?"#a855f7":"#1a2540"};color:${s.form.sport===sp?"#fff":"#6b8ab0"};">${SPORT_ICONS[sp]} ${sp}</button>
-          `).join("")}
+          ${["Krafttraining","Basketball","Padel","Yoga","Wandern","Anderes"].map(sp=>`<button onclick="setFormSport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?"#a855f7":"#1a2540"};color:${s.form.sport===sp?"#fff":"#6b8ab0"};">${SPORT_ICONS[sp]} ${sp}</button>`).join("")}
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input type="text" inputmode="numeric" placeholder="Dauer (min)" value="${s.form.duration}" oninput="setFormField('duration',this.value)"
+          <input type="text" inputmode="numeric" placeholder="Dauer (min)" value="${s.form.duration}" oninput="setFF('duration',this.value)"
             style="flex:1;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;" />
-          <select onchange="setFormField('emoji',this.value)" style="background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 8px;color:#e8eaf0;font-size:17px;outline:none;">
-            ${["💪","🔥","😅","😎","🤩","😤","🥵","💯","🏆","😴"].map(e=>`<option value="${e}" ${s.form.emoji===e?"selected":""}>${e}</option>`).join("")}
+          <select onchange="setFF('emoji',this.value)" style="background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 8px;color:#e8eaf0;font-size:17px;outline:none;">
+            ${["💪","🔥","😅","😎","🤩","😤","🥵","💯","🏆","😴"].map(e=>`<option value="${e}"${s.form.emoji===e?" selected":""}>${e}</option>`).join("")}
           </select>
         </div>
         ${tf.length?`
         <div style="background:#0d1528;border-radius:12px;padding:10px 12px;margin-bottom:10px;border:1px solid #1e2d4a;">
           <div style="font-size:10px;color:${COLORS[s.user]};font-weight:700;letter-spacing:1px;margin-bottom:8px;">📊 TRACKING</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input type="text" inputmode="decimal" placeholder="${s.form.sport==="Schwimmen"?"z.B. 750":"z.B. 5.4"}" value="${s.form.distanz}" oninput="setFormField('distanz',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 145" value="${s.form.puls_avg}" oninput="setFormField('puls_avg',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Max Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 175" value="${s.form.puls_max}" oninput="setFormField('puls_max',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Pace (min/km)</div><input type="text" placeholder="z.B. 5:30" value="${s.form.pace}" oninput="setFormField('pace',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Speed (km/h)</div><input type="text" inputmode="decimal" placeholder="z.B. 27.5" value="${s.form.speed}" oninput="setFormField('speed',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Bahnen (25m)</div><input type="text" inputmode="numeric" placeholder="z.B. 30" value="${s.form.schwimmbahnen}" oninput="setFormField('schwimmbahnen',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input type="text" inputmode="decimal" placeholder="${s.form.sport==="Schwimmen"?"z.B. 750":"z.B. 5.4"}" value="${s.form.distanz}" oninput="setFF('distanz',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 145" value="${s.form.puls_avg}" oninput="setFF('puls_avg',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Max Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 175" value="${s.form.puls_max}" oninput="setFF('puls_max',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Pace (min/km)</div><input type="text" placeholder="z.B. 5:30" value="${s.form.pace}" oninput="setFF('pace',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Speed (km/h)</div><input type="text" inputmode="decimal" placeholder="z.B. 27.5" value="${s.form.speed}" oninput="setFF('speed',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
+            ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Bahnen (25m)</div><input type="text" inputmode="numeric" placeholder="z.B. 30" value="${s.form.schwimmbahnen}" oninput="setFF('schwimmbahnen',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
           </div>
         </div>`:""}
-        <textarea placeholder="Kommentar – so viel du willst..." oninput="setFormField('note',this.value)" style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;resize:none;min-height:70px;line-height:1.5;">${s.form.note}</textarea>
+        <textarea placeholder="Kommentar – so viel du willst..." oninput="setFF('note',this.value)" style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;resize:none;min-height:70px;line-height:1.5;">${s.form.note}</textarea>
         <button onclick="saveEntry()" ${s.saving||!s.form.duration?"disabled":""} style="width:100%;background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;opacity:${s.saving?0.6:1};">
           ${s.saving?"Speichern...":"💾 Einheit speichern"}
         </button>
       </div>`:""}
 
       ${s.moti?`
-      <div style="background:linear-gradient(135deg,#1a1040,#0f1a35);border-radius:14px;padding:12px 14px;margin-bottom:12px;border:1px solid #a855f730;border-left:3px solid #a855f7;">
+      <div style="background:linear-gradient(135deg,#1a1040,#0f1a35);border-radius:14px;padding:12px 14px;margin-bottom:12px;border-left:3px solid #a855f7;">
         <div style="display:flex;justify-content:space-between;gap:8px;">
           <div>
             <div style="font-size:10px;color:#a855f7;font-weight:700;letter-spacing:1px;margin-bottom:5px;">${s.moti.ai?"🤖 KI-COACH":"💬 WOCHENCHECK"}</div>
             <div style="font-size:13px;color:#c4b5d4;line-height:1.5;">${s.moti.e} ${s.moti.t}</div>
           </div>
-          <button onclick="setState({moti:null})" style="background:none;border:none;color:#4a7ab5;cursor:pointer;font-size:15px;flex-shrink:0;">✕</button>
+          <button onclick="ss({moti:null})" style="background:none;border:none;color:#4a7ab5;cursor:pointer;font-size:15px;flex-shrink:0;">✕</button>
         </div>
-        ${!s.moti.ai?`<button onclick="fetchAiMoti()" ${s.motiLoading?"disabled":""} style="margin-top:9px;background:#a855f720;border:1px solid #a855f740;color:#a855f7;border-radius:10px;padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer;">${s.motiLoading?"⏳ Coach denkt...":"🤖 KI-Coach fragen"}</button>`:""}
+        ${!s.moti.ai?`<button onclick="fetchAiMoti()" style="margin-top:9px;background:#a855f720;border:1px solid #a855f740;color:#a855f7;border-radius:10px;padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer;">${s.motiLoading?"⏳...":"🤖 KI-Coach fragen"}</button>`:""}
       </div>`:""}
 
       ${s.entries.length===0?`
@@ -330,9 +279,9 @@ function render() {
           <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div style="flex:1;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
-                <span style="font-size:17px;">${e.emoji}</span>
+                <span style="font-size:17px;">${e.emoji||"💪"}</span>
                 <span style="font-weight:800;font-size:14px;">${SPORT_ICONS[e.sport]||"⚡"} ${e.sport}</span>
-                <span style="font-size:10px;background:${COLORS[e.athlete]}25;color:${COLORS[e.athlete]};padding:2px 7px;border-radius:9px;font-weight:700;">${e.athlete}</span>
+                <span style="font-size:10px;background:${COLORS[e.athlete]||"#00e5ff"}25;color:${COLORS[e.athlete]||"#00e5ff"};padding:2px 7px;border-radius:9px;font-weight:700;">${e.athlete}</span>
                 ${isExtra?`<span style="font-size:10px;background:#a855f720;color:#a855f7;padding:2px 7px;border-radius:8px;font-weight:700;">EXTRA</span>`:""}
               </div>
               ${(t.distanz||t.puls_avg||t.pace||t.speed||t.schwimmbahnen)?`
@@ -344,57 +293,53 @@ function render() {
                 ${t.speed?`<span style="font-size:11px;background:#0d1528;color:#facc15;padding:2px 8px;border-radius:8px;font-weight:700;">💨 ${t.speed}km/h</span>`:""}
                 ${t.schwimmbahnen?`<span style="font-size:11px;background:#0d1528;color:#00e5ff;padding:2px 8px;border-radius:8px;font-weight:700;">🏊 ${t.schwimmbahnen} Bahnen</span>`:""}
               </div>`:""}
-              ${e.note?`<div style="font-size:12px;color:#8ba0c0;margin-bottom:3px;">„${e.note}"</div>`:""}
+              ${e.note?`<div style="font-size:12px;color:#8ba0c0;margin-bottom:3px;">"${e.note}"</div>`:""}
               <div style="font-size:11px;color:#4a7ab5;">⏱ ${e.duration} min · ${fmtTs(e.ts)}</div>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:8px;margin-left:8px;flex-shrink:0;">
-              <div style="font-size:24px;opacity:0.5;">${SPORT_ICONS[e.sport]||"⚡"}</div>
-              <button onclick="deleteEntry('${e.id}')" style="background:#1a2540;border:none;color:#f87171;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;">🗑️</button>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
+              <div style="font-size:22px;opacity:0.5;">${SPORT_ICONS[e.sport]||"⚡"}</div>
+              <button onclick="delEntry('${e.id}')" style="background:#1a2540;border:none;color:#f87171;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;" title="Löschen">🗑️</button>
             </div>
           </div>
         </div>`;
       }).join("")}
     `:""}
 
-    <!-- PLAN -->
+    <!-- ══ PLAN ══ -->
     ${s.tab==="plan"?`
       <div style="font-size:17px;font-weight:800;margin-bottom:3px;">Trainingsplan</div>
       <div style="font-size:11px;color:#4a7ab5;margin-bottom:12px;">Inspiriert von Jan Frodeno · 3–4 Tage/Woche · 16 Wochen</div>
       <div style="display:flex;gap:4px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;">
-        ${PLAN.map((w,i)=>`<button onclick="setState({selWeek:${i}})" style="min-width:40px;padding:5px 9px;border-radius:9px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${s.selWeek===i?w.color:"#111c35"};color:${s.selWeek===i?"#0a0e1a":i===curW?w.color:"#4a7ab5"};outline:${i===curW?`2px solid ${w.color}`:"none"};outline-offset:1px;">W${w.weekNum}</button>`).join("")}
+        ${PLAN.map((pw,i)=>`<button onclick="ss({selWeek:${i}})" style="min-width:40px;padding:5px 9px;border-radius:9px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${s.selWeek===i?pw.color:"#111c35"};color:${s.selWeek===i?"#0a0e1a":i===curW?pw.color:"#4a7ab5"};outline:${i===curW?`2px solid ${pw.color}`:"none"};outline-offset:1px;">W${pw.weekNum}</button>`).join("")}
       </div>
-      <div style="background:#111c35;border-radius:16px;padding:15px;border:1px solid ${week.color}30;border-top:3px solid ${week.color};">
+      <div style="background:#111c35;border-radius:16px;padding:15px;border-top:3px solid ${w.color};">
         <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
           <div>
-            <div style="font-size:10px;color:${week.color};letter-spacing:2px;font-weight:700;">${week.phase.toUpperCase()}${week.deload?" · DELOAD":""}</div>
-            <div style="font-size:16px;font-weight:800;">Woche ${week.weekNum}</div>
+            <div style="font-size:10px;color:${w.color};letter-spacing:2px;font-weight:700;">${w.phase.toUpperCase()}${w.deload?" · DELOAD":""}</div>
+            <div style="font-size:16px;font-weight:800;">Woche ${w.weekNum}</div>
           </div>
           <div style="text-align:right;font-size:11px;color:#4a7ab5;">
-            ab ${fmtDate(week.start)}
-            ${s.selWeek===curW?`<div style="background:${week.color}25;color:${week.color};border-radius:7px;padding:2px 7px;font-size:10px;font-weight:700;margin-top:3px;">← aktuelle Woche</div>`:""}
+            ab ${fmtDate(w.start)}
+            ${s.selWeek===curW?`<div style="background:${w.color}25;color:${w.color};border-radius:7px;padding:2px 7px;font-size:10px;font-weight:700;margin-top:3px;">← aktuelle Woche</div>`:""}
           </div>
         </div>
-        ${week.sessions.map(ss=>`
-          <div style="background:#0d1528;border-radius:11px;padding:10px 13px;margin-bottom:7px;border-left:3px solid ${week.color}50;">
+        ${w.sessions.map(ss2=>`
+          <div style="background:#0d1528;border-radius:11px;padding:10px 13px;margin-bottom:7px;border-left:3px solid ${w.color}50;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
               <div style="display:flex;align-items:center;gap:6px;">
-                <span style="font-size:15px;">${SPORT_ICONS[ss.sport]}</span>
-                <span style="font-weight:700;font-size:13px;">${ss.desc}</span>
+                <span>${SPORT_ICONS[ss2.sport]}</span>
+                <span style="font-weight:700;font-size:13px;">${ss2.desc}</span>
               </div>
               <div style="display:flex;gap:5px;">
-                <span style="font-size:10px;background:#1a2540;color:#6b8ab0;padding:2px 7px;border-radius:7px;font-weight:700;">${ss.day}</span>
-                ${ss.dur>0?`<span style="font-size:10px;color:${week.color};font-weight:700;">${ss.dur}m</span>`:""}
+                <span style="font-size:10px;background:#1a2540;color:#6b8ab0;padding:2px 7px;border-radius:7px;font-weight:700;">${ss2.day}</span>
+                ${ss2.dur>0?`<span style="font-size:10px;color:${w.color};font-weight:700;">${ss2.dur}m</span>`:""}
               </div>
             </div>
-            <div style="font-size:11px;color:#6b8ab0;">📋 ${ss.detail}</div>
-          </div>
-        `).join("")}
-        <div style="margin-top:11px;padding:9px 11px;background:#0d1528;border-radius:9px;">
-          <div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Gesamt Woche</div>
-          <div style="display:flex;gap:12px;">
-            <span style="font-size:12px;font-weight:700;">⏱ ${week.sessions.reduce((a,ss)=>a+ss.dur,0)} min</span>
-            <span style="font-size:12px;font-weight:700;">📅 ${week.sessions.length} Einheiten</span>
-          </div>
+            <div style="font-size:11px;color:#6b8ab0;">📋 ${ss2.detail}</div>
+          </div>`).join("")}
+        <div style="margin-top:11px;padding:9px;background:#0d1528;border-radius:9px;">
+          <span style="font-size:12px;font-weight:700;">⏱ ${w.sessions.reduce((a,x)=>a+x.dur,0)} min</span>
+          <span style="font-size:12px;font-weight:700;margin-left:12px;">📅 ${w.sessions.length} Einheiten</span>
         </div>
       </div>
       <div style="margin-top:12px;background:#111c35;border-radius:13px;padding:12px 14px;">
@@ -404,36 +349,24 @@ function render() {
             <div style="width:9px;height:9px;border-radius:3px;background:${p.col};"></div>
             <span style="font-size:12px;font-weight:600;">${p.name}</span>
             <span style="font-size:11px;color:#4a7ab5;">· Woche ${p.w}</span>
-          </div>
-        `).join("")}
+          </div>`).join("")}
       </div>
     `:""}
 
-    <!-- STATS -->
+    <!-- ══ STATS ══ -->
     ${s.tab==="stats"?`
       <div style="font-size:17px;font-weight:800;margin-bottom:12px;">Euer Duell 🔥</div>
       ${[s.user,other].map(athlete=>{
         const mine=s.entries.filter(e=>e.athlete===athlete);
-        const triMin=mine.filter(e=>SPORT_CAT[e.sport]==="tri").reduce((a,e)=>a+e.duration,0);
-        const extraMin=mine.filter(e=>SPORT_CAT[e.sport]==="extra").reduce((a,e)=>a+e.duration,0);
+        const triMin=mine.filter(e=>SPORT_CAT[e.sport]==="tri").reduce((a,e)=>a+(parseFloat(e.duration)||0),0);
+        const extraMin=mine.filter(e=>SPORT_CAT[e.sport]==="extra").reduce((a,e)=>a+(parseFloat(e.duration)||0),0);
         const totalMin=triMin+extraMin;
         const bySport={};
-        mine.forEach(e=>{bySport[e.sport]=(bySport[e.sport]||0)+e.duration;});
-
-        // Total km per discipline (sum all entries with tracking.distanz)
-        const totalSwimM  = mine.filter(e=>e.sport==="Schwimmen"&&e.tracking?.distanz).reduce((a,e)=>a+parseFloat(e.tracking.distanz),0);
-        const totalRideKm = mine.filter(e=>e.sport==="Radfahren"&&e.tracking?.distanz).reduce((a,e)=>a+parseFloat(e.tracking.distanz),0);
-        const totalRunKm  = mine.filter(e=>(e.sport==="Laufen"||e.sport==="Brick")&&e.tracking?.distanz).reduce((a,e)=>a+parseFloat(e.tracking.distanz),0);
-        // Race goals
-        const GOAL_SWIM=0.75, GOAL_RIDE=27, GOAL_RUN=5.4; // km
-        const swimKm = totalSwimM/1000;
-        const maxMin=Math.max(...ATHLETES.map(a=>s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+e.duration,0)),1);
-        const runs=mine.filter(e=>e.sport==="Laufen"&&e.tracking?.distanz);
-        const rides=mine.filter(e=>e.sport==="Radfahren"&&e.tracking?.distanz);
-        const swims=mine.filter(e=>e.sport==="Schwimmen"&&e.tracking?.distanz);
-        const bestRun=runs.length?Math.max(...runs.map(e=>e.tracking.distanz)):null;
-        const bestRide=rides.length?Math.max(...rides.map(e=>e.tracking.distanz)):null;
-        const bestSwim=swims.length?Math.max(...swims.map(e=>e.tracking.distanz)):null;
+        mine.forEach(e=>{bySport[e.sport]=(bySport[e.sport]||0)+(parseFloat(e.duration)||0);});
+        const maxMin=Math.max(...ATHLETES.map(a=>s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+(parseFloat(e.duration)||0),0)),1);
+        const swimKm=mine.filter(e=>e.sport==="Schwimmen"&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0)/1000;
+        const rideKm=mine.filter(e=>e.sport==="Radfahren"&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0);
+        const runKm=mine.filter(e=>(e.sport==="Laufen"||e.sport==="Brick")&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0);
         const bestPace=mine.filter(e=>e.sport==="Laufen"&&e.tracking?.pace).sort((a,b)=>a.tracking.pace.localeCompare(b.tracking.pace))[0]?.tracking?.pace||null;
         return `
         <div style="background:#111c35;border-radius:16px;padding:15px;margin-bottom:11px;border-top:3px solid ${COLORS[athlete]};">
@@ -443,105 +376,90 @@ function render() {
           </div>
           <div style="margin-bottom:11px;">
             <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b8ab0;margin-bottom:3px;">
-              <span>Gesamtzeit</span><span style="color:${COLORS[athlete]};font-weight:700;">${Math.floor(totalMin/60)}h ${totalMin%60}m</span>
+              <span>Gesamtzeit</span><span style="color:${COLORS[athlete]};font-weight:700;">${Math.floor(totalMin/60)}h ${Math.round(totalMin%60)}m</span>
             </div>
             <div style="height:7px;background:#0d1528;border-radius:7px;overflow:hidden;">
-              <div style="height:100%;background:linear-gradient(90deg,${COLORS[athlete]}88,${COLORS[athlete]});width:${(totalMin/maxMin)*100}%;transition:width 0.5s;"></div>
+              <div style="height:100%;background:${COLORS[athlete]};width:${Math.min((totalMin/maxMin)*100,100).toFixed(1)}%;transition:width 0.5s;"></div>
             </div>
           </div>
           <div style="display:flex;gap:7px;margin-bottom:10px;">
-            <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px;border:1px solid ${COLORS[athlete]}20;">
+            <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px;">
               <div style="font-size:9px;color:${COLORS[athlete]};font-weight:700;letter-spacing:1px;margin-bottom:2px;">TRIATHLON</div>
-              <div style="font-size:13px;font-weight:800;">${triMin} min</div>
+              <div style="font-size:13px;font-weight:800;">${Math.round(triMin)} min</div>
             </div>
-            <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px;border:1px solid #a855f720;">
+            <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px;">
               <div style="font-size:9px;color:#a855f7;font-weight:700;letter-spacing:1px;margin-bottom:2px;">EXTRAS</div>
-              <div style="font-size:13px;font-weight:800;">${extraMin} min</div>
+              <div style="font-size:13px;font-weight:800;">${Math.round(extraMin)} min</div>
             </div>
           </div>
 
-          <!-- Discipline km progress -->
-          <div style="background:#0d1528;border-radius:12px;padding:11px 13px;margin-bottom:10px;border:1px solid #1e2d4a;">
-            <div style="font-size:9px;color:#facc15;font-weight:700;letter-spacing:1px;margin-bottom:10px;">📍 TRAININGSKILOMETER GESAMT</div>
-
+          <!-- Distanz-Tracking -->
+          <div style="background:#0d1528;border-radius:12px;padding:11px 13px;margin-bottom:10px;">
+            <div style="font-size:9px;color:#facc15;font-weight:700;letter-spacing:1px;margin-bottom:10px;">📍 TRAININGSKILOMETER</div>
             ${[
-              {sport:"Schwimmen", icon:"🏊", km: swimKm,      goal: 21,  unit:"km", color:"#818cf8", milestones:[3,6,10,14,18,21]},
-              {sport:"Radfahren", icon:"🚴", km: totalRideKm, goal: 350, unit:"km", color:"#00e5ff", milestones:[50,100,150,200,250,300,350]},
-              {sport:"Laufen",    icon:"🏃", km: totalRunKm,  goal: 84,  unit:"km", color:"#4ade80", milestones:[12,24,36,48,60,72,84]},
-            ].map(disc => {
-              const pct = Math.min((disc.km / disc.goal) * 100, 100);
-              // next milestone
-              const nextMs = disc.milestones.find(m => m > disc.km);
-              const lastMs = [...disc.milestones].reverse().find(m => m <= disc.km);
-              const msLabel = nextMs
-                ? `Nächstes Ziel: <span style="color:${disc.color};font-weight:800;">${nextMs} ${disc.unit}</span>`
-                : `<span style="color:#4ade80;font-weight:800;">✅ Ziel erreicht!</span>`;
+              {label:"🏊 Schwimmen",km:swimKm,goal:21,color:"#818cf8",ms:[3,6,10,14,18,21],unit:"km",dec:2},
+              {label:"🚴 Radfahren",km:rideKm,goal:350,color:"#00e5ff",ms:[50,100,150,200,250,300,350],unit:"km",dec:1},
+              {label:"🏃 Laufen",km:runKm,goal:84,color:"#4ade80",ms:[12,24,36,48,60,72,84],unit:"km",dec:1},
+            ].map(disc=>{
+              const pct=Math.min((disc.km/disc.goal)*100,100);
+              const nextMs=disc.ms.find(m=>m>disc.km);
               return `
-              <div style="margin-bottom:12px;">
+              <div style="margin-bottom:11px;">
                 <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
-                  <span style="color:${disc.color};font-weight:700;">${disc.icon} ${disc.sport}</span>
-                  <span style="color:#e8eaf0;font-weight:700;">${disc.km.toFixed(disc.sport==="Schwimmen"?2:1)} <span style="color:#4a7ab5;">/ ${disc.goal} ${disc.unit}</span></span>
+                  <span style="color:${disc.color};font-weight:700;">${disc.label}</span>
+                  <span style="color:#e8eaf0;font-weight:700;">${disc.km.toFixed(disc.dec)} <span style="color:#4a7ab5;">/ ${disc.goal} ${disc.unit}</span></span>
                 </div>
-                <!-- Progress bar with milestone markers -->
-                <div style="position:relative;height:10px;background:#1a2540;border-radius:6px;overflow:visible;margin-bottom:5px;">
-                  <div style="height:100%;background:linear-gradient(90deg,${disc.color}88,${disc.color});width:${pct.toFixed(1)}%;border-radius:6px;transition:width 0.5s;"></div>
-                  ${disc.milestones.filter(m=>m<disc.goal).map(m=>{
-                    const mPct = (m/disc.goal)*100;
-                    const reached = disc.km >= m;
-                    return `<div style="position:absolute;top:-2px;left:${mPct.toFixed(1)}%;transform:translateX(-50%);width:3px;height:14px;background:${reached?disc.color:"#2a3a5a"};border-radius:2px;"></div>`;
-                  }).join("")}
+                <div style="position:relative;height:8px;background:#1a2540;border-radius:6px;margin-bottom:4px;">
+                  <div style="height:100%;background:${disc.color};width:${pct.toFixed(1)}%;border-radius:6px;transition:width 0.5s;"></div>
+                  ${disc.ms.filter(m=>m<disc.goal).map(m=>`<div style="position:absolute;top:-1px;left:${((m/disc.goal)*100).toFixed(1)}%;transform:translateX(-50%);width:2px;height:10px;background:${disc.km>=m?disc.color:"#2a3a5a"};border-radius:1px;"></div>`).join("")}
                 </div>
-                <div style="font-size:10px;color:#4a7ab5;">${msLabel}</div>
+                <div style="font-size:10px;color:#4a7ab5;">${nextMs?`Nächstes Ziel: <span style="color:${disc.color};font-weight:700;">${nextMs} ${disc.unit}</span>`:`<span style="color:#4ade80;font-weight:700;">✅ Ziel erreicht!</span>`}</div>
               </div>`;
             }).join("")}
           </div>
-          ${(bestRun||bestRide||bestSwim||bestPace)?`
+
+          ${bestPace?`
           <div style="background:#0d1528;border-radius:9px;padding:8px 10px;margin-bottom:9px;">
             <div style="font-size:9px;color:#facc15;font-weight:700;letter-spacing:1px;margin-bottom:6px;">🏅 BESTLEISTUNGEN</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              ${bestRun?`<span style="font-size:11px;background:#111c35;color:#4ade80;padding:3px 8px;border-radius:8px;font-weight:700;">🏃 ${bestRun}km</span>`:""}
-              ${bestPace?`<span style="font-size:11px;background:#111c35;color:#facc15;padding:3px 8px;border-radius:8px;font-weight:700;">⚡ ${bestPace}/km</span>`:""}
-              ${bestRide?`<span style="font-size:11px;background:#111c35;color:#00e5ff;padding:3px 8px;border-radius:8px;font-weight:700;">🚴 ${bestRide}km</span>`:""}
-              ${bestSwim?`<span style="font-size:11px;background:#111c35;color:#818cf8;padding:3px 8px;border-radius:8px;font-weight:700;">🏊 ${bestSwim}m</span>`:""}
-            </div>
+            <span style="font-size:11px;background:#111c35;color:#facc15;padding:3px 8px;border-radius:8px;font-weight:700;">⚡ ${bestPace}/km</span>
           </div>`:""}
+
           <div style="display:flex;gap:5px;flex-wrap:wrap;">
             ${Object.entries(bySport).map(([sp,min])=>`
               <div style="background:#0d1528;border-radius:9px;padding:5px 8px;border:1px solid ${SPORT_CAT[sp]==="extra"?"#a855f730":COLORS[athlete]+"20"};">
-                <div style="font-size:13px;">${SPORT_ICONS[sp]||"⚡"}</div>
-                <div style="font-size:10px;font-weight:700;color:${SPORT_CAT[sp]==="extra"?"#a855f7":COLORS[athlete]};">${min}m</div>
-              </div>
-            `).join("")}
+                <div>${SPORT_ICONS[sp]||"⚡"}</div>
+                <div style="font-size:10px;font-weight:700;color:${SPORT_CAT[sp]==="extra"?"#a855f7":COLORS[athlete]};">${Math.round(min)}m</div>
+              </div>`).join("")}
             ${Object.keys(bySport).length===0?`<div style="font-size:12px;color:#4a7ab5;">Noch keine Einheiten</div>`:""}
           </div>
         </div>`;
       }).join("")}
-      ${s.entries.length>0?`
-      ${(()=>{
-        const stats=ATHLETES.map(a=>({athlete:a,min:s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+e.duration,0),triMin:s.entries.filter(e=>e.athlete===a&&SPORT_CAT[e.sport]==="tri").reduce((x,e)=>x+e.duration,0)}));
+
+      ${s.entries.length>0?`${(()=>{
+        const stats=ATHLETES.map(a=>({athlete:a,min:s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+(parseFloat(e.duration)||0),0),triMin:s.entries.filter(e=>e.athlete===a&&SPORT_CAT[e.sport]==="tri").reduce((x,e)=>x+(parseFloat(e.duration)||0),0)}));
         const leader=stats[0].min>=stats[1].min?stats[0]:stats[1];
         const triLeader=stats[0].triMin>=stats[1].triMin?stats[0]:stats[1];
         return `
         <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;border:1px solid #facc1530;text-align:center;">
+          <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;text-align:center;">
             <div style="font-size:20px;">🏆</div>
             <div style="font-size:13px;font-weight:800;margin-top:3px;">${leader.athlete}</div>
             <div style="font-size:10px;color:#6b8ab0;margin-top:2px;">Gesamt-Lead</div>
           </div>
-          <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;border:1px solid #00e5ff20;text-align:center;">
+          <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;text-align:center;">
             <div style="font-size:20px;">🏊🚴🏃</div>
             <div style="font-size:13px;font-weight:800;margin-top:3px;">${triLeader.athlete}</div>
             <div style="font-size:10px;color:#6b8ab0;margin-top:2px;">Tri-Lead</div>
           </div>
         </div>`;
-      })()}
-      `:""}
-      <button onclick="fetchAiMoti()" ${s.motiLoading?"disabled":""} style="width:100%;background:#1a1040;color:#a855f7;border:1px solid #a855f730;border-radius:12px;padding:10px;font-weight:700;font-size:12px;cursor:pointer;opacity:${s.motiLoading?0.6:1};">
+      })()}`:""}
+
+      <button onclick="fetchAiMoti()" style="width:100%;background:#1a1040;color:#a855f7;border:1px solid #a855f730;border-radius:12px;padding:10px;font-weight:700;font-size:12px;cursor:pointer;">
         ${s.motiLoading?"⏳ Coach denkt...":"🤖 KI-Coach Motivation holen"}
       </button>
     `:""}
 
-    <!-- CHAT -->
+    <!-- ══ CHAT ══ -->
     ${s.tab==="chat"?`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div>
@@ -549,37 +467,35 @@ function render() {
           <div style="font-size:11px;color:#4a7ab5;margin-top:1px;">${ICONS[s.user]} Du · ${ICONS[other]} ${other}</div>
         </div>
       </div>
-      <div id="chatBox" style="background:#0d1528;border-radius:16px;padding:11px;height:360px;overflow-y:auto;border:1px solid #1e2d4a;margin-bottom:11px;display:flex;flex-direction:column;gap:7px;">
+      <div style="background:#0d1528;border-radius:16px;padding:11px;height:360px;overflow-y:auto;border:1px solid #1e2d4a;margin-bottom:11px;display:flex;flex-direction:column;gap:7px;">
         ${s.messages.length===0?`
           <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a7ab5;text-align:center;">
             <div style="font-size:30px;margin-bottom:7px;">💬</div>
             <div style="font-weight:700;">Noch keine Nachrichten</div>
-            <div style="font-size:12px;margin-top:3px;">Wer trainiert heute?</div>
           </div>
         `:s.messages.map(msg=>{
           const isMe=msg.author===s.user;
-          const timeStr=msg.ts?.toDate?msg.ts.toDate().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"";
+          const t=msg.ts?.toDate?msg.ts.toDate().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"";
           return `
           <div style="display:flex;flex-direction:column;align-items:${isMe?"flex-end":"flex-start"};">
             <div style="max-width:80%;padding:8px 12px;border-radius:${isMe?"15px 15px 3px 15px":"15px 15px 15px 3px"};background:${isMe?COLORS[s.user]+"22":"#1a2540"};border:1px solid ${isMe?COLORS[s.user]+"45":"#2a3a5a"};">
               <div style="font-size:13px;color:#e8eaf0;line-height:1.45;">${msg.text}</div>
             </div>
             <div style="font-size:10px;color:#3a5070;margin-top:2px;">
-              <span style="color:${COLORS[msg.author]};font-weight:700;">${ICONS[msg.author]} ${msg.author}</span> · ${timeStr}
+              <span style="color:${COLORS[msg.author]||"#00e5ff"};font-weight:700;">${ICONS[msg.author]||"🔵"} ${msg.author}</span> · ${t}
             </div>
           </div>`;
         }).join("")}
         <div id="chatBottom"></div>
       </div>
       <div style="display:flex;gap:7px;margin-bottom:9px;">
-        <input id="chatInput" value="${s.chatInput.replace(/"/g,'&quot;')}" oninput="setState({chatInput:this.value})" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}" placeholder="Schreib ${other} was..."
+        <input id="chatInput" value="${s.chatInput.replace(/"/g,"&quot;")}" oninput="ss({chatInput:this.value})" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}" placeholder="Schreib ${other} was..."
           style="flex:1;background:#111c35;border:1px solid #1e2d4a;border-radius:12px;padding:10px 13px;color:#e8eaf0;font-size:13px;outline:none;" />
         <button onclick="sendMsg()" ${s.sending||!s.chatInput.trim()?"disabled":""} style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:10px 17px;font-weight:800;font-size:15px;cursor:pointer;opacity:${s.sending||!s.chatInput.trim()?0.45:1};">➤</button>
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;">
         ${["💪 War heute im Training!","😅 Heute wird nix mehr...","🔥 Wann trainierst du?","🏊 Pool morgen?","🚴 Fahrt am Wochenende?","😎 Keine Ausreden!","🏃 5km heute?","🎾 Padel später?"].map(q=>`
-          <button onclick="setState({chatInput:'${q}'})" style="background:#111c35;border:1px solid #1e2d4a;color:#6b8ab0;border-radius:18px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:600;">${q}</button>
-        `).join("")}
+          <button onclick="ss({chatInput:'${q}'})" style="background:#111c35;border:1px solid #1e2d4a;color:#6b8ab0;border-radius:18px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:600;">${q}</button>`).join("")}
       </div>
     `:""}
 
@@ -588,30 +504,22 @@ function render() {
     <!-- BOTTOM NAV -->
     <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#0d1528;border-top:1px solid #1e2d4a;display:flex;">
       ${[{id:"feed",icon:"📡",label:"Feed"},{id:"plan",icon:"📋",label:"Plan"},{id:"stats",icon:"⚡",label:"Duell"},{id:"chat",icon:"💬",label:"Chat"}].map(t=>`
-        <button onclick="setState({tab:'${t.id}'})" style="flex:1;padding:11px 0 9px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid ${s.tab===t.id?COLORS[s.user]:"transparent"};">
+        <button onclick="ss({tab:'${t.id}'})" style="flex:1;padding:11px 0 9px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid ${s.tab===t.id?COLORS[s.user]:"transparent"};">
           <span style="font-size:19px;">${t.icon}</span>
           <span style="font-size:10px;font-weight:700;color:${s.tab===t.id?COLORS[s.user]:"#4a7ab5"};">${t.label}</span>
-        </button>
-      `).join("")}
+        </button>`).join("")}
     </div>
   </div>`;
-
-  // Re-focus chat input if chat tab active
-  if(s.tab==="chat") {
-    const inp=document.getElementById("chatInput");
-    // don't steal focus on mobile
-  }
 }
 
-// ── Global handlers ───────────────────────────────────────────────────────────
-window.setState    = (patch) => { state={...state,...patch}; render(); };
-window.setUser     = (u)     => setState({user:u});
-window.toggleLog   = ()      => setState({showLog:!state.showLog});
-window.setFormSport= (sp)    => setState({form:{...state.form,sport:sp}});
-window.setFormField= (k,v)   => setState({form:{...state.form,[k]:v}});
+window.ss          = ss;
+window.setUser     = u => ss({user:u});
+window.setFormSport= sp => ss({form:{...S.form,sport:sp}});
+window.setFF       = (k,v) => ss({form:{...S.form,[k]:v}});
 window.saveEntry   = saveEntry;
+window.delEntry    = delEntry;
 window.sendMsg     = sendMsg;
-window.deleteEntry  = deleteEntry;
+window.fetchAiMoti = fetchAiMoti;
 
 render();
 </script>
