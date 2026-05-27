@@ -52,10 +52,10 @@ const MOTI=[
   {e:"🤜🤛",t:"Einer muss anfangen – und dann zieht der andere nach!"},
   {e:"😎",t:"Padel zählt auch – aber der Triathlon trainiert sich nicht von selbst!"},
 ];
-const BIRTHDAY = { athlete:"J-Smooth", until: new Date("2026-05-31") };
+
 
 function daysLeft(){ return Math.ceil((RACE_DATE-new Date())/86400000); }
-function showBday(){ return BIRTHDAY && new Date()<=BIRTHDAY.until; }
+
 function fmtTs(ts){
   if(!ts||!ts.toDate) return "";
   const d=ts.toDate();
@@ -186,10 +186,7 @@ function render(){
           <div style="font-size:10px;color:#4a7ab5;letter-spacing:2px;margin-bottom:5px;">DU BIST</div>
           <div style="display:flex;gap:5px;">
             ${ATHLETES.map(a=>`
-              <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
-                <button onclick="setUser('${a}')" style="padding:5px 11px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:${s.user===a?COLORS[a]:"#1a2540"};color:${s.user===a?"#0a0e1a":"#6b8ab0"};">${ICONS[a]} ${a}</button>
-                ${showBday()&&a===BIRTHDAY.athlete?`<div style="font-size:10px;color:#f9a8d4;font-weight:700;">🎂 Happy Birthday!</div>`:""}
-              </div>`).join("")}
+              <button onclick="setUser('${a}')" style="padding:5px 11px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:${s.user===a?COLORS[a]:"#1a2540"};color:${s.user===a?"#0a0e1a":"#6b8ab0"};">${ICONS[a]} ${a}</button>`).join("")}
           </div>
         </div>
       </div>
@@ -210,7 +207,7 @@ function render(){
     ${s.tab==="feed"?`
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-size:17px;font-weight:800;">Activity Feed</div>
-        <button onclick="ss({showLog:!S.showLog})" style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:20px;padding:7px 15px;font-weight:800;font-size:12px;cursor:pointer;">${s.showLog?"✕ Schließen":"+ Einheit"}</button>
+        <button onclick="toggleLog()" style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:20px;padding:7px 15px;font-weight:800;font-size:12px;cursor:pointer;">${s.showLog?"✕ Schließen":"+ Einheit"}</button>
       </div>
 
       ${s.showLog?`
@@ -514,6 +511,7 @@ function render(){
 
 window.ss          = ss;
 window.setUser     = u => ss({user:u});
+window.toggleLog   = () => ss({showLog:!S.showLog});
 window.setFormSport= sp => ss({form:{...S.form,sport:sp}});
 window.setFF       = (k,v) => ss({form:{...S.form,[k]:v}});
 window.saveEntry   = saveEntry;
