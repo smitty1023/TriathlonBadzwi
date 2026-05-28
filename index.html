@@ -22,7 +22,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp }
+import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot, serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -100,6 +100,7 @@ let S={
   showLog:false, selWeek:getCurWeek(),
   form:{sport:"Laufen",duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""},
   saving:false, sending:false, toast:null, moti:null, motiLoading:false, chatInput:"",
+  activeComment:null, commentInput:"",
 };
 
 function emptyForm(sport){ return {sport,duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""}; }
@@ -141,6 +142,30 @@ async function delEntry(id){
   if(!confirm("Einheit löschen?")) return;
   try{ await deleteDoc(doc(db,"entries",id)); }
   catch(e){ alert("Fehler beim Löschen"); }
+}
+
+async function addComment(id){
+  const input = document.getElementById("ci_"+id);
+  const text = (input?.value||S.commentInput).trim();
+  if(!text) return;
+  try{
+    const entry = S.entries.find(e=>e.id===id);
+    const comments = [...(entry?.comments||[]), {
+      author: S.user,
+      text,
+      ts: new Date().toISOString()
+    }];
+    await updateDoc(doc(db,"entries",id), { comments });
+    ss({commentInput:"", activeComment:null});
+  } catch(e){ console.error(e); }
+}
+  try{
+    const entry = S.entries.find(e=>e.id===id);
+    const reactions = {...(entry?.reactions||{})};
+    if(reactions[S.user]===emoji) { delete reactions[S.user]; }
+    else { reactions[S.user]=emoji; }
+    await updateDoc(doc(db,"entries",id), { reactions });
+  } catch(e){ console.error(e); }
 }
 
 async function sendMsg(){
@@ -299,6 +324,34 @@ function render(){
               </div>`:""}
               ${e.note?`<div style="font-size:12px;color:#8ba0c0;margin-bottom:3px;">"${e.note}"</div>`:""}
               <div style="font-size:11px;color:#4a7ab5;">⏱ ${e.duration} min · ${fmtTs(e.ts)}</div>
+              <!-- Reactions + comment button -->
+              <div style="display:flex;align-items:center;gap:5px;margin-top:7px;flex-wrap:wrap;">
+                ${["🔥","💪","😅","👏","🤣","😮"].map(em=>{
+                  const reacted = (e.reactions||{})[s.user]===em;
+                  const count = Object.values(e.reactions||{}).filter(r=>r===em).length;
+                  return `<button onclick="reactEntry('${e.id}','${em}')" style="background:${reacted?"#1e3a2a":"#0d1528"};border:1px solid ${reacted?"#4ade8060":"#1e2d4a"};border-radius:20px;padding:3px 9px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:3px;">
+                    ${em}${count>0?`<span style="font-size:10px;color:#6b8ab0;font-weight:700;">${count}</span>`:""}
+                  </button>`;
+                }).join("")}
+                <button onclick="ss({activeComment:S.activeComment==='${e.id}'?null:'${e.id}',commentInput:''})" style="background:${s.activeComment===e.id?"#1a2d4a":"#0d1528"};border:1px solid ${s.activeComment===e.id?"#4a7ab5":"#1e2d4a"};border-radius:20px;padding:3px 10px;cursor:pointer;font-size:12px;color:#6b8ab0;font-weight:700;">💬</button>
+              </div>
+              <!-- Existing comments -->
+              ${(e.comments||[]).length>0?`
+              <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px;">
+                ${(e.comments||[]).map(c=>`
+                  <div style="background:#0d1528;border-radius:10px;padding:7px 10px;border-left:2px solid ${COLORS[c.author]||"#4a7ab5"};">
+                    <div style="font-size:10px;color:${COLORS[c.author]||"#4a7ab5"};font-weight:700;margin-bottom:3px;">${ICONS[c.author]||"🔵"} ${c.author}</div>
+                    <div style="font-size:12px;color:#c4d0e0;line-height:1.4;">${c.text}</div>
+                  </div>`).join("")}
+              </div>`:""}
+              <!-- Comment input -->
+              ${s.activeComment===e.id?`
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <input id="ci_${e.id}" placeholder="Kommentar..." onblur="ss({commentInput:this.value})" onchange="ss({commentInput:this.value})"
+                  style="flex:1;background:#0d1528;border:1px solid #4a7ab560;border-radius:10px;padding:7px 11px;color:#e8eaf0;font-size:13px;outline:none;" />
+                <button onclick="addComment('${e.id}')" style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:10px;padding:7px 13px;font-weight:800;font-size:13px;cursor:pointer;">➤</button>
+              </div>`:""}
+
             </div>
             <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
               <div style="font-size:22px;opacity:0.5;">${SPORT_ICONS[e.sport]||"⚡"}</div>
@@ -523,6 +576,8 @@ window.setFormSport= sp => ss({form:{...S.form,sport:sp}});
 window.setFF       = (k,v) => ss({form:{...S.form,[k]:v}});
 window.saveEntry   = saveEntry;
 window.delEntry    = delEntry;
+window.reactEntry  = reactEntry;
+window.addComment  = addComment;
 window.sendMsg     = sendMsg;
 window.fetchAiMoti = fetchAiMoti;
 
