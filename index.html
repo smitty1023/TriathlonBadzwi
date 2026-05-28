@@ -9,580 +9,521 @@
   <meta name="apple-mobile-web-app-title" content="Tri-Duell" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="icon" href="icon-512.png" />
-  <title>Tri-Duell 🏁</title>
+  <title>Tri-Duell</title>
   <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-    body { background: #0a0e1a; font-family: -apple-system, 'Segoe UI', sans-serif; color: #e8eaf0; }
-    input, select, button, textarea { font-family: inherit; }
-    ::-webkit-scrollbar { width: 0; }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+    body{background:#0a0e1a;font-family:-apple-system,'Segoe UI',sans-serif;color:#e8eaf0}
+    input,select,button,textarea{font-family:inherit}
+    ::-webkit-scrollbar{width:0}
   </style>
 </head>
 <body>
-<div id="root"><div style="color:#4a7ab5;text-align:center;padding:40px;font-size:14px;">Laden...</div></div>
-
+<div id="root"><div style="color:#4a7ab5;text-align:center;padding:40px">Laden...</div></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc, query, orderBy, onSnapshot, serverTimestamp }
+import { getFirestore,collection,addDoc,deleteDoc,updateDoc,doc,query,orderBy,onSnapshot,serverTimestamp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCK3_0SUOrmRVsNCCXGJmXYwSKNvaBJO-8",
-  authDomain: "triathlon-455c8.firebaseapp.com",
-  projectId: "triathlon-455c8",
-  storageBucket: "triathlon-455c8.firebasestorage.app",
-  messagingSenderId: "1087991994879",
-  appId: "1:1087991994879:web:8c79b6fdebcb6ea2262fca"
-};
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+const db = getFirestore(initializeApp({
+  apiKey:"AIzaSyCK3_0SUOrmRVsNCCXGJmXYwSKNvaBJO-8",
+  authDomain:"triathlon-455c8.firebaseapp.com",
+  projectId:"triathlon-455c8",
+  storageBucket:"triathlon-455c8.firebasestorage.app",
+  messagingSenderId:"1087991994879",
+  appId:"1:1087991994879:web:8c79b6fdebcb6ea2262fca"
+}));
 
-// ── Constants ────────────────────────────────────────────────────────────────
-const RACE_DATE  = new Date("2026-08-30");
-const ATHLETES   = ["Smitty","J-Smooth"];
-const COLORS     = { Smitty:"#00e5ff", "J-Smooth":"#ff6b35" };
-const ICONS      = { Smitty:"🔵", "J-Smooth":"🟠" };
-const SPORT_ICONS= { Schwimmen:"🏊",Radfahren:"🚴",Laufen:"🏃",Brick:"🔥",Krafttraining:"🏋️",Basketball:"🏀",Padel:"🎾",Yoga:"🧘",Wandern:"🥾",Anderes:"⚡" };
-const SPORT_CAT  = { Schwimmen:"tri",Radfahren:"tri",Laufen:"tri",Brick:"tri",Krafttraining:"extra",Basketball:"extra",Padel:"extra",Yoga:"extra",Wandern:"extra",Anderes:"extra" };
-const TRACK_FIELDS={ Laufen:["distanz","puls_avg","puls_max","pace"],Radfahren:["distanz","puls_avg","puls_max","speed"],Schwimmen:["distanz","schwimmbahnen"],Brick:["distanz","puls_avg"],Wandern:["distanz"] };
-const MOTI=[
-  {e:"🔥",t:"Diese Woche war ruhig – aber der 30. August wartet nicht!"},
-  {e:"😤",t:"Auch eine leichte Woche bringt euch näher ans Ziel. Jetzt wieder anziehen!"},
-  {e:"💪",t:"Jan Frodeno hatte auch schwache Wochen. Dann hat er trotzdem trainiert."},
-  {e:"🏁",t:"Jede Einheit zählt – auch die kleine. Macht euch warm!"},
-  {e:"🤜🤛",t:"Einer muss anfangen – und dann zieht der andere nach!"},
-  {e:"😎",t:"Padel zählt auch – aber der Triathlon trainiert sich nicht von selbst!"},
+const RACE   = new Date("2026-08-30");
+const NAMES  = ["Smitty","J-Smooth"];
+const COL    = {Smitty:"#00e5ff","J-Smooth":"#ff6b35"};
+const ICO    = {Smitty:"🔵","J-Smooth":"🟠"};
+const SICO   = {Schwimmen:"🏊",Radfahren:"🚴",Laufen:"🏃",Brick:"🔥",Krafttraining:"🏋️",Basketball:"🏀",Padel:"🎾",Yoga:"🧘",Wandern:"🥾",Anderes:"⚡"};
+const SCAT   = {Schwimmen:"tri",Radfahren:"tri",Laufen:"tri",Brick:"tri",Krafttraining:"extra",Basketball:"extra",Padel:"extra",Yoga:"extra",Wandern:"extra",Anderes:"extra"};
+const TF     = {Laufen:["distanz","puls_avg","puls_max","pace"],Radfahren:["distanz","puls_avg","puls_max","speed"],Schwimmen:["distanz","schwimmbahnen"],Brick:["distanz","puls_avg"],Wandern:["distanz"]};
+const MOTI   = [{e:"🔥",t:"Diese Woche war ruhig – der 30. August wartet nicht!"},{e:"💪",t:"Jan Frodeno hatte auch schwache Wochen. Dann hat er trotzdem trainiert."},{e:"🏁",t:"Jede Einheit zählt – macht euch warm!"},{e:"🤜🤛",t:"Einer muss anfangen – und dann zieht der andere nach!"}];
+
+const PLAN_START = new Date("2026-05-25");
+const PHASES = [{n:"Basis",w:[1,2,3,4],c:"#4ade80"},{n:"Aufbau",w:[5,6,7,8],c:"#facc15"},{n:"Intensität",w:[9,10,11,12],c:"#fb923c"},{n:"Peak & Taper",w:[13,14,15,16],c:"#f87171"}];
+const SES = [
+  [{d:"Di",s:"Schwimmen",desc:"Technik-Schwimmen",dur:30,det:"4×100m, Fokus Gleiten"},{d:"Do",s:"Laufen",desc:"Lockerer Dauerlauf",dur:35,det:"Puls 130-140"},{d:"Sa",s:"Radfahren",desc:"Grundlagenfahrt",dur:60,det:"Zone 2, ≥85 rpm"},{d:"So",s:"Laufen",desc:"Langer Lauf",dur:45,det:"Puls <140"}],
+  [{d:"Di",s:"Schwimmen",desc:"Ausdauer-Schwimmen",dur:35,det:"600m + 4×50m"},{d:"Do",s:"Radfahren",desc:"Intervallfahrt",dur:45,det:"5×3 min Zone 3"},{d:"Sa",s:"Laufen",desc:"Tempodauerlauf",dur:40,det:"Puls 145-155"},{d:"So",s:"Schwimmen",desc:"Regeneration",dur:30,det:"Ruhig"}],
+  [{d:"Di",s:"Laufen",desc:"Fahrtspiel",dur:40,det:"5×2 min flott"},{d:"Do",s:"Schwimmen",desc:"750m non-stop",dur:35,det:"Rennpace"},{d:"Sa",s:"Radfahren",desc:"Lange Fahrt",dur:75,det:"Zone 2"},{d:"So",s:"Laufen",desc:"Easy Run",dur:30,det:"Sehr locker"}],
+  [{d:"Di",s:"Schwimmen",desc:"Deload Technik",dur:25,det:"Kein Druck"},{d:"Do",s:"Laufen",desc:"Deload locker",dur:30,det:"Puls <130"},{d:"Sa",s:"Radfahren",desc:"Deload Fahrt",dur:45,det:"Zone 1-2"}],
+  [{d:"Di",s:"Schwimmen",desc:"Intervall-Schwimmen",dur:40,det:"8×100m Rennpace"},{d:"Do",s:"Radfahren",desc:"Schwelle",dur:50,det:"3×8 min"},{d:"Sa",s:"Brick",desc:"Brick-Training",dur:60,det:"45 min Rad + 15 min Lauf"},{d:"So",s:"Laufen",desc:"Langer Lauf",dur:50,det:"Zone 2"}],
+  [{d:"Di",s:"Schwimmen",desc:"Rennsimulation",dur:35,det:"750m + 4×50m"},{d:"Do",s:"Laufen",desc:"Tempointervalle",dur:45,det:"3×1km"},{d:"Sa",s:"Radfahren",desc:"Hügel",dur:60,det:"Kraft & Technik"},{d:"So",s:"Schwimmen",desc:"Aerob",dur:35,det:"1200m locker"}],
+  [{d:"Di",s:"Brick",desc:"Kurz-Brick",dur:55,det:"30+20 min"},{d:"Do",s:"Schwimmen",desc:"Sprint-Intervalle",dur:35,det:"10×50m"},{d:"Sa",s:"Radfahren",desc:"Lange Fahrt",dur:90,det:"27km+"},{d:"So",s:"Laufen",desc:"Mittellanger Lauf",dur:50,det:"Puls 145"}],
+  [{d:"Di",s:"Schwimmen",desc:"Deload",dur:25,det:"Locker"},{d:"Do",s:"Laufen",desc:"Deload",dur:30,det:"Locker"},{d:"Sa",s:"Radfahren",desc:"Deload",dur:45,det:"Zone 1"}],
+  [{d:"Di",s:"Schwimmen",desc:"Race-Pace",dur:40,det:"2×750m"},{d:"Do",s:"Radfahren",desc:"VO2max",dur:55,det:"6×4 min"},{d:"Sa",s:"Brick",desc:"Rennsimulation",dur:70,det:"27km+5,4km!"},{d:"So",s:"Laufen",desc:"Easy Recovery",dur:30,det:"Puls <130"}],
+  [{d:"Di",s:"Schwimmen",desc:"Strecke+Speed",dur:40,det:"500m+10×50m"},{d:"Do",s:"Laufen",desc:"5km-Test",dur:35,det:"Zeitnahme!"},{d:"Sa",s:"Radfahren",desc:"Rennstrecke",dur:75,det:"27km Zeitnahme"},{d:"So",s:"Schwimmen",desc:"Regeneration",dur:30,det:"Locker"}],
+  [{d:"Di",s:"Brick",desc:"Wettkampf-Brick",dur:75,det:"Volle Distanz"},{d:"Do",s:"Schwimmen",desc:"Technik",dur:35,det:"Fokus Wende"},{d:"Sa",s:"Radfahren",desc:"Intervalle",dur:60,det:"5×5 min"},{d:"So",s:"Laufen",desc:"Tempodauerlauf",dur:40,det:"Puls 150-160"}],
+  [{d:"Di",s:"Schwimmen",desc:"Deload",dur:25,det:"Locker"},{d:"Do",s:"Laufen",desc:"Deload",dur:25,det:"Locker"},{d:"Sa",s:"Radfahren",desc:"Deload",dur:40,det:"Locker"}],
+  [{d:"Di",s:"Schwimmen",desc:"Kurze Schwelle",dur:30,det:"4×100m"},{d:"Do",s:"Radfahren",desc:"Kurze Intervalle",dur:40,det:"3×5 min"},{d:"Sa",s:"Brick",desc:"Kurz-Brick",dur:50,det:"20+15 min"},{d:"So",s:"Laufen",desc:"Locker",dur:25,det:"Entspannt"}],
+  [{d:"Di",s:"Schwimmen",desc:"Renngefühl",dur:25,det:"750m"},{d:"Do",s:"Laufen",desc:"Lockerheit",dur:25,det:"Steigerungen"},{d:"Sa",s:"Radfahren",desc:"Activation",dur:35,det:"3×2 min"}],
+  [{d:"Di",s:"Schwimmen",desc:"Super kurz",dur:20,det:"400m"},{d:"Do",s:"Laufen",desc:"Joggen",dur:15,det:"15 min locker"}],
+  [{d:"Mo",s:"Schwimmen",desc:"Mini-Aktivierung",dur:15,det:"300m"},{d:"Di",s:"Laufen",desc:"Mini-Aktivierung",dur:10,det:"10 min"},{d:"So",s:"Radfahren",desc:"RENNTAG!",dur:0,det:"Alles geben!"}],
 ];
-
-
-function daysLeft(){ return Math.ceil((RACE_DATE-new Date())/86400000); }
-
+const PLAN = SES.map((sessions,i)=>{
+  const d=new Date(PLAN_START); d.setDate(d.getDate()+i*7);
+  const p=PHASES.find(x=>x.w.includes(i+1));
+  return {num:i+1,phase:p.n,col:p.c,start:d,sessions,deload:[4,8,12].includes(i+1)};
+});
+function curWeek(){ return Math.max(0,Math.min(Math.floor((new Date()-PLAN_START)/604800000),15)); }
+function daysLeft(){ return Math.ceil((RACE-new Date())/86400000); }
+function fmtDate(d){ return d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}); }
 function fmtTs(ts){
   if(!ts||!ts.toDate) return "";
   const d=ts.toDate();
   return d.toLocaleDateString("de-DE",{weekday:"short",day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
 }
-function fmtDate(d){ return d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}); }
-
-// ── Plan ─────────────────────────────────────────────────────────────────────
-const PLAN_START=new Date("2026-05-25");
-const PHASES=[{name:"Basis",weeks:[1,2,3,4],color:"#4ade80"},{name:"Aufbau",weeks:[5,6,7,8],color:"#facc15"},{name:"Intensität",weeks:[9,10,11,12],color:"#fb923c"},{name:"Peak & Taper",weeks:[13,14,15,16],color:"#f87171"}];
-const SESSIONS=[
-  [{day:"Di",sport:"Schwimmen",desc:"Technik-Schwimmen",dur:30,detail:"4×100m Pause 30s, Fokus Gleiten"},{day:"Do",sport:"Laufen",desc:"Lockerer Dauerlauf",dur:35,detail:"Puls 130-140"},{day:"Sa",sport:"Radfahren",desc:"Grundlagenfahrt",dur:60,detail:"Zone 2, Tritt ≥85 rpm"},{day:"So",sport:"Laufen",desc:"Langer Lauf",dur:45,detail:"Sehr locker, Puls <140"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Ausdauer-Schwimmen",dur:35,detail:"600m kontinuierlich, 4×50m Sprints"},{day:"Do",sport:"Radfahren",desc:"Intervallfahrt",dur:45,detail:"5×3 min Zone 3"},{day:"Sa",sport:"Laufen",desc:"Tempodauerlauf",dur:40,detail:"Puls 145-155"},{day:"So",sport:"Schwimmen",desc:"Regeneration",dur:30,detail:"Ruhiges Schwimmen"}],
-  [{day:"Di",sport:"Laufen",desc:"Fahrtspiel",dur:40,detail:"5×2 min flott / 2 min traben"},{day:"Do",sport:"Schwimmen",desc:"Streckenausdauer",dur:35,detail:"750m non-stop, Rennpace"},{day:"Sa",sport:"Radfahren",desc:"Lange Fahrt",dur:75,detail:"Zone 2, Verpflegung üben"},{day:"So",sport:"Laufen",desc:"Easy Run",dur:30,detail:"Sehr locker"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Deload – Technik",dur:25,detail:"Nur Technik, kein Druck"},{day:"Do",sport:"Laufen",desc:"Deload – locker",dur:30,detail:"Puls <130"},{day:"Sa",sport:"Radfahren",desc:"Deload – Fahrt",dur:45,detail:"Zone 1-2, locker rollen"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Intervall-Schwimmen",dur:40,detail:"8×100m Rennpace"},{day:"Do",sport:"Radfahren",desc:"Schwelle",dur:50,detail:"3×8 min Schwelle"},{day:"Sa",sport:"Brick",desc:"Brick-Training",dur:60,detail:"45 min Rad + 15 min Laufen"},{day:"So",sport:"Laufen",desc:"Langer Lauf",dur:50,detail:"Zone 2"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Rennsimulation",dur:35,detail:"750m Rennpace, 4×50m Speed"},{day:"Do",sport:"Laufen",desc:"Tempointervalle",dur:45,detail:"3×1 km Renntempo"},{day:"Sa",sport:"Radfahren",desc:"Hügel",dur:60,detail:"Kraft und Technik"},{day:"So",sport:"Schwimmen",desc:"Aerob",dur:35,detail:"1200m locker"}],
-  [{day:"Di",sport:"Brick",desc:"Kurz-Brick",dur:55,detail:"30 min Rad + 20 min Laufen"},{day:"Do",sport:"Schwimmen",desc:"Sprint-Intervalle",dur:35,detail:"10×50m Sprint"},{day:"Sa",sport:"Radfahren",desc:"Lange Fahrt",dur:90,detail:"27km+ Strecke"},{day:"So",sport:"Laufen",desc:"Mittellanger Lauf",dur:50,detail:"Puls 145"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Deload",dur:25,detail:"Locker"},{day:"Do",sport:"Laufen",desc:"Deload",dur:30,detail:"Sehr locker"},{day:"Sa",sport:"Radfahren",desc:"Deload",dur:45,detail:"Zone 1"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Race-Pace",dur:40,detail:"2×750m Rennpace"},{day:"Do",sport:"Radfahren",desc:"VO2max",dur:55,detail:"6×4 min VO2max"},{day:"Sa",sport:"Brick",desc:"Rennsimulation",dur:70,detail:"27km Rad + 5,4km Laufen!"},{day:"So",sport:"Laufen",desc:"Easy Recovery",dur:30,detail:"Puls <130"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Strecke + Speed",dur:40,detail:"500m Rennpace, 10×50m"},{day:"Do",sport:"Laufen",desc:"5km-Test",dur:35,detail:"5km Zeitnahme!"},{day:"Sa",sport:"Radfahren",desc:"Rennstrecke",dur:75,detail:"27km Zeitnahme"},{day:"So",sport:"Schwimmen",desc:"Regeneration",dur:30,detail:"Locker"}],
-  [{day:"Di",sport:"Brick",desc:"Wettkampf-Brick",dur:75,detail:"Komplette Distanz simulieren"},{day:"Do",sport:"Schwimmen",desc:"Technik & Speed",dur:35,detail:"Fokus Wende"},{day:"Sa",sport:"Radfahren",desc:"Intervallfahrt",dur:60,detail:"5×5 min Schwelle"},{day:"So",sport:"Laufen",desc:"Tempodauerlauf",dur:40,detail:"Puls 150-160"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Deload",dur:25,detail:"Locker"},{day:"Do",sport:"Laufen",desc:"Deload",dur:25,detail:"Locker"},{day:"Sa",sport:"Radfahren",desc:"Deload",dur:40,detail:"Locker"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Kurze Schwelle",dur:30,detail:"4×100m Rennpace"},{day:"Do",sport:"Radfahren",desc:"Kurze Intervalle",dur:40,detail:"3×5 min Zone 4"},{day:"Sa",sport:"Brick",desc:"Kurz-Brick",dur:50,detail:"20 min Rad + 15 min Laufen"},{day:"So",sport:"Laufen",desc:"Locker",dur:25,detail:"Sehr entspannt"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Renngefühl",dur:25,detail:"750m Rennpace"},{day:"Do",sport:"Laufen",desc:"Lockerheit",dur:25,detail:"Steigerungen"},{day:"Sa",sport:"Radfahren",desc:"Activation",dur:35,detail:"3×2 min flottes Treten"}],
-  [{day:"Di",sport:"Schwimmen",desc:"Super kurz",dur:20,detail:"400m locker"},{day:"Do",sport:"Laufen",desc:"Joggen",dur:15,detail:"15 min locker"}],
-  [{day:"Mo",sport:"Schwimmen",desc:"Mini-Aktivierung",dur:15,detail:"300m locker"},{day:"Di",sport:"Laufen",desc:"Mini-Aktivierung",dur:10,detail:"10 min Traben"},{day:"So",sport:"Radfahren",desc:"🏁 RENNTAG!",dur:0,detail:"Sprint-Triathlon – alles geben!"}],
-];
-function getPlan(){
-  return Array.from({length:16},(_,w)=>{
-    const d=new Date(PLAN_START); d.setDate(d.getDate()+w*7);
-    const phase=PHASES.find(p=>p.weeks.includes(w+1));
-    return {weekNum:w+1,phase:phase.name,color:phase.color,start:d,sessions:SESSIONS[w],deload:[4,8,12].includes(w+1)};
-  });
-}
-function getCurWeek(){ return Math.max(0,Math.min(Math.floor((new Date()-PLAN_START)/604800000),15)); }
-const PLAN=getPlan();
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let S={
+let ST = {
   tab:"feed", user:"Smitty", entries:[], messages:[],
-  showLog:false, selWeek:getCurWeek(),
+  showLog:false, selWeek:curWeek(),
   form:{sport:"Laufen",duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""},
-  saving:false, sending:false, toast:null, moti:null, motiLoading:false, chatInput:"",
-  activeComment:null, commentInput:"",
+  saving:false, sending:false, toast:null, moti:null, motiLoading:false,
+  chatInput:"", activeComment:null,
 };
+function ef(sport){ return {sport,duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""}; }
+function up(patch){
+  const active=document.activeElement;
+  const typing = active&&(active.tagName==="INPUT"||active.tagName==="TEXTAREA")&&(ST.showLog||ST.activeComment);
+  ST={...ST,...patch};
+  if(!typing||patch.tab!==undefined||patch.showLog!==undefined||patch.activeComment!==undefined||patch.entries!==undefined||patch.messages!==undefined){
+    draw();
+  }
+}
 
-function emptyForm(sport){ return {sport,duration:"",note:"",emoji:"💪",distanz:"",puls_avg:"",puls_max:"",pace:"",speed:"",schwimmbahnen:""}; }
-function ss(patch){ S={...S,...patch}; render(); }
-
-// ── Firebase listeners ────────────────────────────────────────────────────────
-onSnapshot(query(collection(db,"entries"),orderBy("ts","desc")), snap=>{
-  S.entries=snap.docs.map(d=>({id:d.id,...d.data()}));
-  checkMoti(S.entries);
-  render();
+// ── Firebase ──────────────────────────────────────────────────────────────────
+onSnapshot(query(collection(db,"entries"),orderBy("ts","desc")),snap=>{
+  ST.entries=snap.docs.map(d=>({id:d.id,...d.data()}));
+  checkMoti();
+  draw();
 });
-onSnapshot(query(collection(db,"messages"),orderBy("ts","asc")), snap=>{
-  S.messages=snap.docs.map(d=>({id:d.id,...d.data()}));
-  render();
-  setTimeout(()=>document.getElementById("chatBottom")?.scrollIntoView({behavior:"smooth"}),50);
+onSnapshot(query(collection(db,"messages"),orderBy("ts","asc")),snap=>{
+  ST.messages=snap.docs.map(d=>({id:d.id,...d.data()}));
+  draw();
+  setTimeout(()=>document.getElementById("cb")?.scrollIntoView({behavior:"smooth"}),60);
 });
 
-function checkMoti(all){
+function checkMoti(){
   const mon=new Date(); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); mon.setHours(0,0,0,0);
-  const wkTri=all.filter(e=>e.ts?.toDate?.()>=mon&&["Schwimmen","Radfahren","Laufen","Brick"].includes(e.sport));
-  if(new Date().getDay()>=3&&wkTri.length<2&&!S.moti) S.moti=MOTI[Math.floor(Math.random()*MOTI.length)];
+  const n=ST.entries.filter(e=>e.ts?.toDate?.()>=mon&&["Schwimmen","Radfahren","Laufen","Brick"].includes(e.sport)).length;
+  if(new Date().getDay()>=3&&n<2&&!ST.moti) ST.moti=MOTI[Math.floor(Math.random()*MOTI.length)];
 }
 
-async function saveEntry(){
-  if(!S.form.duration) return;
-  ss({saving:true});
+async function save(){
+  if(!ST.form.duration) return;
+  up({saving:true});
   try{
-    const f=S.form;
+    const f=ST.form;
     await addDoc(collection(db,"entries"),{
-      athlete:S.user,sport:f.sport,duration:f.duration,note:f.note,emoji:f.emoji,ts:serverTimestamp(),
+      athlete:ST.user,sport:f.sport,duration:f.duration,note:f.note,emoji:f.emoji,ts:serverTimestamp(),
       tracking:{distanz:f.distanz||null,puls_avg:f.puls_avg||null,puls_max:f.puls_max||null,pace:f.pace||null,speed:f.speed||null,schwimmbahnen:f.schwimmbahnen||null},
+      reactions:{},comments:[],
     });
-    showToast(ICONS[S.user]+" Einheit gespeichert!");
-    ss({form:emptyForm("Laufen"),showLog:false,tab:"feed",saving:false});
-  }catch(e){ showToast("❌ Fehler"); ss({saving:false}); }
+    toast(ICO[ST.user]+" Einheit gespeichert!");
+    up({form:ef("Laufen"),showLog:false,tab:"feed",saving:false});
+  }catch(e){ toast("Fehler"); up({saving:false}); }
 }
 
-async function delEntry(id){
+async function del(id){
   if(!confirm("Einheit löschen?")) return;
-  try{ await deleteDoc(doc(db,"entries",id)); }
-  catch(e){ alert("Fehler beim Löschen"); }
+  try{ await deleteDoc(doc(db,"entries",id)); }catch(e){}
 }
 
-async function addComment(id){
-  const input = document.getElementById("ci_"+id);
-  const text = (input?.value||S.commentInput).trim();
+async function react(id,emoji){
+  try{
+    const e=ST.entries.find(x=>x.id===id);
+    const r={...(e?.reactions||{})};
+    if(r[ST.user]===emoji) delete r[ST.user]; else r[ST.user]=emoji;
+    await updateDoc(doc(db,"entries",id),{reactions:r});
+  }catch(e){}
+}
+
+async function comment(id){
+  const inp=document.getElementById("ci"+id);
+  const text=(inp?.value||"").trim();
   if(!text) return;
   try{
-    const entry = S.entries.find(e=>e.id===id);
-    const comments = [...(entry?.comments||[]), {
-      author: S.user,
-      text,
-      ts: new Date().toISOString()
-    }];
-    await updateDoc(doc(db,"entries",id), { comments });
-    ss({commentInput:"", activeComment:null});
-  } catch(e){ console.error(e); }
-}
-  try{
-    const entry = S.entries.find(e=>e.id===id);
-    const reactions = {...(entry?.reactions||{})};
-    if(reactions[S.user]===emoji) { delete reactions[S.user]; }
-    else { reactions[S.user]=emoji; }
-    await updateDoc(doc(db,"entries",id), { reactions });
-  } catch(e){ console.error(e); }
+    const e=ST.entries.find(x=>x.id===id);
+    const comments=[...(e?.comments||[]),{author:ST.user,text,ts:new Date().toISOString()}];
+    await updateDoc(doc(db,"entries",id),{comments});
+    up({activeComment:null});
+  }catch(e){}
 }
 
 async function sendMsg(){
-  const text=S.chatInput.trim(); if(!text) return;
-  ss({sending:true});
-  try{ await addDoc(collection(db,"messages"),{author:S.user,text,ts:serverTimestamp()}); ss({chatInput:"",sending:false}); }
-  catch(e){ ss({sending:false}); }
+  const inp=document.getElementById("chatInp");
+  const text=(inp?.value||ST.chatInput).trim();
+  if(!text) return;
+  up({sending:true});
+  try{ await addDoc(collection(db,"messages"),{author:ST.user,text,ts:serverTimestamp()}); up({chatInput:"",sending:false}); }
+  catch(e){ up({sending:false}); }
 }
 
-async function fetchAiMoti(){
-  ss({motiLoading:true});
+async function aiMoti(){
+  up({motiLoading:true});
   try{
     const mon=new Date(); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); mon.setHours(0,0,0,0);
-    const wk=S.entries.filter(e=>e.ts?.toDate?.()>=mon);
+    const wk=ST.entries.filter(e=>e.ts?.toDate?.()>=mon);
     const tc=wk.filter(e=>["Schwimmen","Radfahren","Laufen","Brick"].includes(e.sport)).length;
     const ec=wk.filter(e=>!["Schwimmen","Radfahren","Laufen","Brick"].includes(e.sport)).length;
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,messages:[{role:"user",content:`Du bist Triathlon-Coach für Smitty und J-Smooth. Sprint-Triathlon am 30.8.2026, noch ${daysLeft()} Tage. Diese Woche: ${tc} Tri-Einheiten, ${ec} andere. Kurze, humorvolle Motivation auf Deutsch (2-3 Sätze). Direkt anfangen.`}]})});
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:200,messages:[{role:"user",content:"Triathlon-Coach für Smitty und J-Smooth, Sprint-Triathlon am 30.8.2026, noch "+daysLeft()+" Tage. Woche: "+tc+" Tri, "+ec+" andere Einheiten. 2-3 Sätze motivierend humorvoll auf Deutsch, direkt starten."}]})});
     const data=await res.json();
-    const text=data.content?.map(c=>c.text||"").join("")||"";
-    if(text) ss({moti:{e:"🤖",t:text.trim(),ai:true},motiLoading:false});
-  }catch(e){ ss({moti:MOTI[0],motiLoading:false}); }
+    const txt=data.content?.map(c=>c.text||"").join("")||"";
+    if(txt) up({moti:{e:"🤖",t:txt.trim(),ai:true},motiLoading:false});
+  }catch(e){ up({moti:MOTI[0],motiLoading:false}); }
 }
 
-function showToast(msg){ ss({toast:msg}); setTimeout(()=>ss({toast:null}),2500); }
+function toast(msg){ up({toast:msg}); setTimeout(()=>up({toast:null}),2500); }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function render(){
-  // Don't re-render while user is typing in a form field
-  const active = document.activeElement;
-  if(active && (active.tagName==="INPUT"||active.tagName==="TEXTAREA") && S.showLog) {
-    // Only update non-form parts - skip full render
-    // Update tab bar and header only
-    return;
-  }
-  const s=S, w=PLAN[s.selWeek], curW=getCurWeek(), other=s.user==="Smitty"?"J-Smooth":"Smitty";
-  const tf=TRACK_FIELDS[s.form.sport]||[];
+// ── Draw ──────────────────────────────────────────────────────────────────────
+function draw(){
+  const s=ST, w=PLAN[s.selWeek], cw=curWeek(), other=s.user==="Smitty"?"J-Smooth":"Smitty";
+  const tf=TF[s.form.sport]||[];
 
-  document.getElementById("root").innerHTML=`
-  <div style="min-height:100vh;background:#0a0e1a;color:#e8eaf0;max-width:480px;margin:0 auto;padding-bottom:80px;">
-
-    <!-- HEADER -->
-    <div style="background:linear-gradient(135deg,#0d1528,#111c35);border-bottom:1px solid #1e2d4a;padding:18px 18px 14px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div style="font-size:10px;letter-spacing:3px;color:#4a7ab5;text-transform:uppercase;margin-bottom:3px;">Sprint Triathlon</div>
-          <div style="font-size:22px;font-weight:800;">🏁 ${daysLeft()} Tage</div>
-          <div style="font-size:12px;color:#6b8ab0;margin-top:1px;">bis 30. August 2026</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:10px;color:#4a7ab5;letter-spacing:2px;margin-bottom:5px;">DU BIST</div>
-          <div style="display:flex;gap:5px;">
-            ${ATHLETES.map(a=>`
-              <button onclick="setUser('${a}')" style="padding:5px 11px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:${s.user===a?COLORS[a]:"#1a2540"};color:${s.user===a?"#0a0e1a":"#6b8ab0"};">${ICONS[a]} ${a}</button>`).join("")}
+  // ─ entry cards ─
+  function entryCard(e){
+    const ex=SCAT[e.sport]==="extra", bc=ex?"#a855f7":COL[e.athlete]||"#00e5ff";
+    const t=e.tracking||{}, r=e.reactions||{}, cmts=e.comments||[];
+    const myR=r[s.user]||"";
+    const emojis=["🔥","💪","😅","👏","🤣","😮"];
+    return `
+    <div style="background:#111c35;border-radius:14px;padding:12px 14px;margin-bottom:9px;border:1px solid ${bc}25;border-left:3px solid ${bc}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+            <span style="font-size:17px">${e.emoji||"💪"}</span>
+            <span style="font-weight:800;font-size:14px">${SICO[e.sport]||"⚡"} ${e.sport}</span>
+            <span style="font-size:10px;background:${(COL[e.athlete]||"#00e5ff")}25;color:${COL[e.athlete]||"#00e5ff"};padding:2px 7px;border-radius:9px;font-weight:700">${e.athlete}</span>
+            ${ex?'<span style="font-size:10px;background:#a855f720;color:#a855f7;padding:2px 7px;border-radius:8px;font-weight:700">EXTRA</span>':""}
           </div>
-        </div>
-      </div>
-      <div style="display:flex;gap:7px;margin-top:12px;">
-        ${[["🏊","750m"],["🚴","27km"],["🏃","5,4km"]].map(([ic,d])=>`
-          <div style="flex:1;background:#0d1528;border-radius:10px;padding:6px 0;border:1px solid #1e2d4a;text-align:center;">
-            <div style="font-size:15px;">${ic}</div>
-            <div style="font-size:11px;font-weight:700;color:#00e5ff;">${d}</div>
-          </div>`).join("")}
-      </div>
-    </div>
-
-    ${s.toast?`<div style="position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#1e2d4a;color:#e8eaf0;padding:9px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;border:1px solid #00e5ff40;white-space:nowrap;">${s.toast}</div>`:""}
-
-    <div style="padding:15px;">
-
-    <!-- ══ FEED ══ -->
-    ${s.tab==="feed"?`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-size:17px;font-weight:800;">Activity Feed</div>
-        <button onclick="toggleLog()" style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:20px;padding:7px 15px;font-weight:800;font-size:12px;cursor:pointer;">${s.showLog?"✕ Schließen":"+ Einheit"}</button>
-      </div>
-
-      ${s.showLog?`
-      <div style="background:#111c35;border-radius:16px;padding:15px;border:1px solid #1e2d4a;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="font-size:13px;font-weight:700;color:${COLORS[s.user]};">${ICONS[s.user]} ${s.user}s Einheit</div>
-          <button onclick="ss({showLog:false})" style="background:#1a2540;border:none;color:#6b8ab0;border-radius:20px;width:28px;height:28px;font-size:15px;cursor:pointer;">✕</button>
-        </div>
-        <div style="font-size:10px;color:#4a7ab5;font-weight:700;letter-spacing:1px;margin-bottom:6px;">TRIATHLON</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;">
-          ${["Schwimmen","Radfahren","Laufen","Brick"].map(sp=>`<button onclick="setFormSport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?COLORS[s.user]:"#1a2540"};color:${s.form.sport===sp?"#0a0e1a":"#6b8ab0"};">${SPORT_ICONS[sp]} ${sp}</button>`).join("")}
-        </div>
-        <div style="font-size:10px;color:#4a7ab5;font-weight:700;letter-spacing:1px;margin-bottom:6px;">EXTRAS</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;">
-          ${["Krafttraining","Basketball","Padel","Yoga","Wandern","Anderes"].map(sp=>`<button onclick="setFormSport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?"#a855f7":"#1a2540"};color:${s.form.sport===sp?"#fff":"#6b8ab0"};">${SPORT_ICONS[sp]} ${sp}</button>`).join("")}
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input type="text" inputmode="numeric" placeholder="Dauer (min)" value="${s.form.duration}" onblur="setFF('duration',this.value)" onchange="setFF('duration',this.value)"
-            style="flex:1;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;" />
-          <select onchange="setFF('emoji',this.value)" style="background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 8px;color:#e8eaf0;font-size:17px;outline:none;">
-            ${["💪","🔥","😅","😎","🤩","😤","🥵","💯","🏆","😴"].map(e=>`<option value="${e}"${s.form.emoji===e?" selected":""}>${e}</option>`).join("")}
-          </select>
-        </div>
-        ${tf.length?`
-        <div style="background:#0d1528;border-radius:12px;padding:10px 12px;margin-bottom:10px;border:1px solid #1e2d4a;">
-          <div style="font-size:10px;color:${COLORS[s.user]};font-weight:700;letter-spacing:1px;margin-bottom:8px;">📊 TRACKING</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input type="text" inputmode="decimal" placeholder="${s.form.sport==="Schwimmen"?"z.B. 750":"z.B. 5.4"}" value="${s.form.distanz}" onblur="setFF('distanz',this.value)" onchange="setFF('distanz',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 145" value="${s.form.puls_avg}" onblur="setFF('puls_avg',this.value)" onchange="setFF('puls_avg',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Max Puls (bpm)</div><input type="text" inputmode="numeric" placeholder="z.B. 175" value="${s.form.puls_max}" onblur="setFF('puls_max',this.value)" onchange="setFF('puls_max',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Pace (min/km)</div><input type="text" placeholder="z.B. 5:30" value="${s.form.pace}" onblur="setFF('pace',this.value)" onchange="setFF('pace',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Ø Speed (km/h)</div><input type="text" inputmode="decimal" placeholder="z.B. 27.5" value="${s.form.speed}" onblur="setFF('speed',this.value)" onchange="setFF('speed',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-            ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px;">Bahnen (25m)</div><input type="text" inputmode="numeric" placeholder="z.B. 30" value="${s.form.schwimmbahnen}" onblur="setFF('schwimmbahnen',this.value)" onchange="setFF('schwimmbahnen',this.value)" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none;"></div>`:""}
-          </div>
-        </div>`:""}
-        <textarea placeholder="Kommentar – so viel du willst..." onblur="setFF('note',this.value)" onchange="setFF('note',this.value)" style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;resize:none;min-height:70px;line-height:1.5;">${s.form.note}</textarea>
-        <button onclick="saveEntry()" ${s.saving||!s.form.duration?"disabled":""} style="width:100%;background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;opacity:${s.saving?0.6:1};">
-          ${s.saving?"Speichern...":"💾 Einheit speichern"}
-        </button>
-      </div>`:""}
-
-      ${s.moti?`
-      <div style="background:linear-gradient(135deg,#1a1040,#0f1a35);border-radius:14px;padding:12px 14px;margin-bottom:12px;border-left:3px solid #a855f7;">
-        <div style="display:flex;justify-content:space-between;gap:8px;">
-          <div>
-            <div style="font-size:10px;color:#a855f7;font-weight:700;letter-spacing:1px;margin-bottom:5px;">${s.moti.ai?"🤖 KI-COACH":"💬 WOCHENCHECK"}</div>
-            <div style="font-size:13px;color:#c4b5d4;line-height:1.5;">${s.moti.e} ${s.moti.t}</div>
-          </div>
-          <button onclick="ss({moti:null})" style="background:none;border:none;color:#4a7ab5;cursor:pointer;font-size:15px;flex-shrink:0;">✕</button>
-        </div>
-        ${!s.moti.ai?`<button onclick="fetchAiMoti()" style="margin-top:9px;background:#a855f720;border:1px solid #a855f740;color:#a855f7;border-radius:10px;padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer;">${s.motiLoading?"⏳...":"🤖 KI-Coach fragen"}</button>`:""}
-      </div>`:""}
-
-      ${s.entries.length===0?`
-        <div style="text-align:center;padding:48px;color:#4a7ab5;border:1px dashed #1e2d4a;border-radius:16px;">
-          <div style="font-size:36px;margin-bottom:8px;">🏊🚴🏃</div>
-          <div style="font-weight:700;">Noch keine Einheiten</div>
-          <div style="font-size:12px;margin-top:3px;">Wer trainiert zuerst?</div>
-        </div>
-      `:s.entries.map(e=>{
-        const isExtra=SPORT_CAT[e.sport]==="extra";
-        const bc=isExtra?"#a855f7":COLORS[e.athlete];
-        const t=e.tracking||{};
-        return `
-        <div style="background:#111c35;border-radius:14px;padding:12px 14px;margin-bottom:9px;border:1px solid ${bc}25;border-left:3px solid ${bc};">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div style="flex:1;">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
-                <span style="font-size:17px;">${e.emoji||"💪"}</span>
-                <span style="font-weight:800;font-size:14px;">${SPORT_ICONS[e.sport]||"⚡"} ${e.sport}</span>
-                <span style="font-size:10px;background:${COLORS[e.athlete]||"#00e5ff"}25;color:${COLORS[e.athlete]||"#00e5ff"};padding:2px 7px;border-radius:9px;font-weight:700;">${e.athlete}</span>
-                ${isExtra?`<span style="font-size:10px;background:#a855f720;color:#a855f7;padding:2px 7px;border-radius:8px;font-weight:700;">EXTRA</span>`:""}
-              </div>
-              ${(t.distanz||t.puls_avg||t.pace||t.speed||t.schwimmbahnen)?`
-              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
-                ${t.distanz?`<span style="font-size:11px;background:#0d1528;color:#4ade80;padding:2px 8px;border-radius:8px;font-weight:700;">📍 ${t.distanz}${e.sport==="Schwimmen"?"m":"km"}</span>`:""}
-                ${t.puls_avg?`<span style="font-size:11px;background:#0d1528;color:#f87171;padding:2px 8px;border-radius:8px;font-weight:700;">❤️ Ø${t.puls_avg}bpm</span>`:""}
-                ${t.puls_max?`<span style="font-size:11px;background:#0d1528;color:#fb923c;padding:2px 8px;border-radius:8px;font-weight:700;">⬆️ ${t.puls_max}bpm</span>`:""}
-                ${t.pace?`<span style="font-size:11px;background:#0d1528;color:#facc15;padding:2px 8px;border-radius:8px;font-weight:700;">⏱ ${t.pace}/km</span>`:""}
-                ${t.speed?`<span style="font-size:11px;background:#0d1528;color:#facc15;padding:2px 8px;border-radius:8px;font-weight:700;">💨 ${t.speed}km/h</span>`:""}
-                ${t.schwimmbahnen?`<span style="font-size:11px;background:#0d1528;color:#00e5ff;padding:2px 8px;border-radius:8px;font-weight:700;">🏊 ${t.schwimmbahnen} Bahnen</span>`:""}
-              </div>`:""}
-              ${e.note?`<div style="font-size:12px;color:#8ba0c0;margin-bottom:3px;">"${e.note}"</div>`:""}
-              <div style="font-size:11px;color:#4a7ab5;">⏱ ${e.duration} min · ${fmtTs(e.ts)}</div>
-              <!-- Reactions + comment button -->
-              <div style="display:flex;align-items:center;gap:5px;margin-top:7px;flex-wrap:wrap;">
-                ${["🔥","💪","😅","👏","🤣","😮"].map(em=>{
-                  const reacted = (e.reactions||{})[s.user]===em;
-                  const count = Object.values(e.reactions||{}).filter(r=>r===em).length;
-                  return `<button onclick="reactEntry('${e.id}','${em}')" style="background:${reacted?"#1e3a2a":"#0d1528"};border:1px solid ${reacted?"#4ade8060":"#1e2d4a"};border-radius:20px;padding:3px 9px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:3px;">
-                    ${em}${count>0?`<span style="font-size:10px;color:#6b8ab0;font-weight:700;">${count}</span>`:""}
-                  </button>`;
-                }).join("")}
-                <button onclick="toggleComment('${e.id}')" style="background:${s.activeComment===e.id?"#1a2d4a":"#0d1528"};border:1px solid ${s.activeComment===e.id?"#4a7ab5":"#1e2d4a"};border-radius:20px;padding:3px 10px;cursor:pointer;font-size:12px;color:#6b8ab0;font-weight:700;">💬</button>
-              </div>
-              <!-- Existing comments -->
-              ${(e.comments||[]).length>0?`
-              <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px;">
-                ${(e.comments||[]).map(c=>`
-                  <div style="background:#0d1528;border-radius:10px;padding:7px 10px;border-left:2px solid ${COLORS[c.author]||"#4a7ab5"};">
-                    <div style="font-size:10px;color:${COLORS[c.author]||"#4a7ab5"};font-weight:700;margin-bottom:3px;">${ICONS[c.author]||"🔵"} ${c.author}</div>
-                    <div style="font-size:12px;color:#c4d0e0;line-height:1.4;">${c.text}</div>
-                  </div>`).join("")}
-              </div>`:""}
-              <!-- Comment input -->
-              ${s.activeComment===e.id?`
-              <div style="display:flex;gap:6px;margin-top:8px;">
-                <input id="ci_${e.id}" placeholder="Kommentar..." onblur="ss({commentInput:this.value})" onchange="ss({commentInput:this.value})"
-                  style="flex:1;background:#0d1528;border:1px solid #4a7ab560;border-radius:10px;padding:7px 11px;color:#e8eaf0;font-size:13px;outline:none;" />
-                <button onclick="addComment('${e.id}')" style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:10px;padding:7px 13px;font-weight:800;font-size:13px;cursor:pointer;">➤</button>
-              </div>`:""}
-
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-left:8px;flex-shrink:0;">
-              <div style="font-size:22px;opacity:0.5;">${SPORT_ICONS[e.sport]||"⚡"}</div>
-              <button onclick="delEntry('${e.id}')" style="background:#1a2540;border:none;color:#f87171;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer;" title="Löschen">🗑️</button>
-            </div>
-          </div>
-        </div>`;
-      }).join("")}
-    `:""}
-
-    <!-- ══ PLAN ══ -->
-    ${s.tab==="plan"?`
-      <div style="font-size:17px;font-weight:800;margin-bottom:3px;">Trainingsplan</div>
-      <div style="font-size:11px;color:#4a7ab5;margin-bottom:12px;">Inspiriert von Jan Frodeno · 3–4 Tage/Woche · 16 Wochen</div>
-      <div style="display:flex;gap:4px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px;">
-        ${PLAN.map((pw,i)=>`<button onclick="ss({selWeek:${i}})" style="min-width:40px;padding:5px 9px;border-radius:9px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${s.selWeek===i?pw.color:"#111c35"};color:${s.selWeek===i?"#0a0e1a":i===curW?pw.color:"#4a7ab5"};outline:${i===curW?`2px solid ${pw.color}`:"none"};outline-offset:1px;">W${pw.weekNum}</button>`).join("")}
-      </div>
-      <div style="background:#111c35;border-radius:16px;padding:15px;border-top:3px solid ${w.color};">
-        <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-          <div>
-            <div style="font-size:10px;color:${w.color};letter-spacing:2px;font-weight:700;">${w.phase.toUpperCase()}${w.deload?" · DELOAD":""}</div>
-            <div style="font-size:16px;font-weight:800;">Woche ${w.weekNum}</div>
-          </div>
-          <div style="text-align:right;font-size:11px;color:#4a7ab5;">
-            ab ${fmtDate(w.start)}
-            ${s.selWeek===curW?`<div style="background:${w.color}25;color:${w.color};border-radius:7px;padding:2px 7px;font-size:10px;font-weight:700;margin-top:3px;">← aktuelle Woche</div>`:""}
-          </div>
-        </div>
-        ${w.sessions.map(ss2=>`
-          <div style="background:#0d1528;border-radius:11px;padding:10px 13px;margin-bottom:7px;border-left:3px solid ${w.color}50;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span>${SPORT_ICONS[ss2.sport]}</span>
-                <span style="font-weight:700;font-size:13px;">${ss2.desc}</span>
-              </div>
-              <div style="display:flex;gap:5px;">
-                <span style="font-size:10px;background:#1a2540;color:#6b8ab0;padding:2px 7px;border-radius:7px;font-weight:700;">${ss2.day}</span>
-                ${ss2.dur>0?`<span style="font-size:10px;color:${w.color};font-weight:700;">${ss2.dur}m</span>`:""}
-              </div>
-            </div>
-            <div style="font-size:11px;color:#6b8ab0;">📋 ${ss2.detail}</div>
-          </div>`).join("")}
-        <div style="margin-top:11px;padding:9px;background:#0d1528;border-radius:9px;">
-          <span style="font-size:12px;font-weight:700;">⏱ ${w.sessions.reduce((a,x)=>a+x.dur,0)} min</span>
-          <span style="font-size:12px;font-weight:700;margin-left:12px;">📅 ${w.sessions.length} Einheiten</span>
-        </div>
-      </div>
-      <div style="margin-top:12px;background:#111c35;border-radius:13px;padding:12px 14px;">
-        <div style="font-size:11px;font-weight:700;color:#6b8ab0;margin-bottom:7px;">PHASEN</div>
-        ${[{name:"Basis",col:"#4ade80",w:"1–4"},{name:"Aufbau",col:"#facc15",w:"5–8"},{name:"Intensität",col:"#fb923c",w:"9–12"},{name:"Peak & Taper",col:"#f87171",w:"13–16"}].map(p=>`
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;">
-            <div style="width:9px;height:9px;border-radius:3px;background:${p.col};"></div>
-            <span style="font-size:12px;font-weight:600;">${p.name}</span>
-            <span style="font-size:11px;color:#4a7ab5;">· Woche ${p.w}</span>
-          </div>`).join("")}
-      </div>
-    `:""}
-
-    <!-- ══ STATS ══ -->
-    ${s.tab==="stats"?`
-      <div style="font-size:17px;font-weight:800;margin-bottom:12px;">Euer Duell 🔥</div>
-      ${[s.user,other].map(athlete=>{
-        const mine=s.entries.filter(e=>e.athlete===athlete);
-        const triMin=mine.filter(e=>SPORT_CAT[e.sport]==="tri").reduce((a,e)=>a+(parseFloat(e.duration)||0),0);
-        const extraMin=mine.filter(e=>SPORT_CAT[e.sport]==="extra").reduce((a,e)=>a+(parseFloat(e.duration)||0),0);
-        const totalMin=triMin+extraMin;
-        const bySport={};
-        mine.forEach(e=>{bySport[e.sport]=(bySport[e.sport]||0)+(parseFloat(e.duration)||0);});
-        const maxMin=Math.max(...ATHLETES.map(a=>s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+(parseFloat(e.duration)||0),0)),1);
-        const swimKm=mine.filter(e=>e.sport==="Schwimmen"&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0)/1000;
-        const rideKm=mine.filter(e=>e.sport==="Radfahren"&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0);
-        const runKm=mine.filter(e=>(e.sport==="Laufen"||e.sport==="Brick")&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0);
-        const bestPace=mine.filter(e=>e.sport==="Laufen"&&e.tracking?.pace).sort((a,b)=>a.tracking.pace.localeCompare(b.tracking.pace))[0]?.tracking?.pace||null;
-        return `
-        <div style="background:#111c35;border-radius:16px;padding:15px;margin-bottom:11px;border-top:3px solid ${COLORS[athlete]};">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;">
-            <div style="font-size:15px;font-weight:800;">${ICONS[athlete]} ${athlete}</div>
-            <div style="font-size:12px;color:${COLORS[athlete]};font-weight:700;">${mine.length} Einheiten</div>
-          </div>
-          <div style="margin-bottom:11px;">
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b8ab0;margin-bottom:3px;">
-              <span>Gesamtzeit</span><span style="color:${COLORS[athlete]};font-weight:700;">${Math.floor(totalMin/60)}h ${Math.round(totalMin%60)}m</span>
-            </div>
-            <div style="height:7px;background:#0d1528;border-radius:7px;overflow:hidden;">
-              <div style="height:100%;background:${COLORS[athlete]};width:${Math.min((totalMin/maxMin)*100,100).toFixed(1)}%;transition:width 0.5s;"></div>
-            </div>
-          </div>
-          <div style="display:flex;gap:7px;margin-bottom:10px;">
-            <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px;">
-              <div style="font-size:9px;color:${COLORS[athlete]};font-weight:700;letter-spacing:1px;margin-bottom:2px;">TRIATHLON</div>
-              <div style="font-size:13px;font-weight:800;">${Math.round(triMin)} min</div>
-            </div>
-            <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px;">
-              <div style="font-size:9px;color:#a855f7;font-weight:700;letter-spacing:1px;margin-bottom:2px;">EXTRAS</div>
-              <div style="font-size:13px;font-weight:800;">${Math.round(extraMin)} min</div>
-            </div>
-          </div>
-
-          <!-- Distanz-Tracking -->
-          <div style="background:#0d1528;border-radius:12px;padding:11px 13px;margin-bottom:10px;">
-            <div style="font-size:9px;color:#facc15;font-weight:700;letter-spacing:1px;margin-bottom:10px;">📍 TRAININGSKILOMETER</div>
-            ${[
-              {label:"🏊 Schwimmen",km:swimKm,goal:21,color:"#818cf8",ms:[3,6,10,14,18,21],unit:"km",dec:2},
-              {label:"🚴 Radfahren",km:rideKm,goal:350,color:"#00e5ff",ms:[50,100,150,200,250,300,350],unit:"km",dec:1},
-              {label:"🏃 Laufen",km:runKm,goal:84,color:"#4ade80",ms:[12,24,36,48,60,72,84],unit:"km",dec:1},
-            ].map(disc=>{
-              const pct=Math.min((disc.km/disc.goal)*100,100);
-              const nextMs=disc.ms.find(m=>m>disc.km);
-              return `
-              <div style="margin-bottom:11px;">
-                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
-                  <span style="color:${disc.color};font-weight:700;">${disc.label}</span>
-                  <span style="color:#e8eaf0;font-weight:700;">${disc.km.toFixed(disc.dec)} <span style="color:#4a7ab5;">/ ${disc.goal} ${disc.unit}</span></span>
-                </div>
-                <div style="position:relative;height:8px;background:#1a2540;border-radius:6px;margin-bottom:4px;">
-                  <div style="height:100%;background:${disc.color};width:${pct.toFixed(1)}%;border-radius:6px;transition:width 0.5s;"></div>
-                  ${disc.ms.filter(m=>m<disc.goal).map(m=>`<div style="position:absolute;top:-1px;left:${((m/disc.goal)*100).toFixed(1)}%;transform:translateX(-50%);width:2px;height:10px;background:${disc.km>=m?disc.color:"#2a3a5a"};border-radius:1px;"></div>`).join("")}
-                </div>
-                <div style="font-size:10px;color:#4a7ab5;">${nextMs?`Nächstes Ziel: <span style="color:${disc.color};font-weight:700;">${nextMs} ${disc.unit}</span>`:`<span style="color:#4ade80;font-weight:700;">✅ Ziel erreicht!</span>`}</div>
-              </div>`;
-            }).join("")}
-          </div>
-
-          ${bestPace?`
-          <div style="background:#0d1528;border-radius:9px;padding:8px 10px;margin-bottom:9px;">
-            <div style="font-size:9px;color:#facc15;font-weight:700;letter-spacing:1px;margin-bottom:6px;">🏅 BESTLEISTUNGEN</div>
-            <span style="font-size:11px;background:#111c35;color:#facc15;padding:3px 8px;border-radius:8px;font-weight:700;">⚡ ${bestPace}/km</span>
+          ${(t.distanz||t.puls_avg||t.pace||t.speed||t.schwimmbahnen)?`
+          <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px">
+            ${t.distanz?`<span style="font-size:11px;background:#0d1528;color:#4ade80;padding:2px 8px;border-radius:8px;font-weight:700">📍 ${t.distanz}${e.sport==="Schwimmen"?"m":"km"}</span>`:""}
+            ${t.puls_avg?`<span style="font-size:11px;background:#0d1528;color:#f87171;padding:2px 8px;border-radius:8px;font-weight:700">❤️ Ø${t.puls_avg}bpm</span>`:""}
+            ${t.puls_max?`<span style="font-size:11px;background:#0d1528;color:#fb923c;padding:2px 8px;border-radius:8px;font-weight:700">⬆️ ${t.puls_max}bpm</span>`:""}
+            ${t.pace?`<span style="font-size:11px;background:#0d1528;color:#facc15;padding:2px 8px;border-radius:8px;font-weight:700">⏱ ${t.pace}/km</span>`:""}
+            ${t.speed?`<span style="font-size:11px;background:#0d1528;color:#facc15;padding:2px 8px;border-radius:8px;font-weight:700">💨 ${t.speed}km/h</span>`:""}
+            ${t.schwimmbahnen?`<span style="font-size:11px;background:#0d1528;color:#00e5ff;padding:2px 8px;border-radius:8px;font-weight:700">🏊 ${t.schwimmbahnen} Bahnen</span>`:""}
           </div>`:""}
-
-          <div style="display:flex;gap:5px;flex-wrap:wrap;">
-            ${Object.entries(bySport).map(([sp,min])=>`
-              <div style="background:#0d1528;border-radius:9px;padding:5px 8px;border:1px solid ${SPORT_CAT[sp]==="extra"?"#a855f730":COLORS[athlete]+"20"};">
-                <div>${SPORT_ICONS[sp]||"⚡"}</div>
-                <div style="font-size:10px;font-weight:700;color:${SPORT_CAT[sp]==="extra"?"#a855f7":COLORS[athlete]};">${Math.round(min)}m</div>
-              </div>`).join("")}
-            ${Object.keys(bySport).length===0?`<div style="font-size:12px;color:#4a7ab5;">Noch keine Einheiten</div>`:""}
+          ${e.note?`<div style="font-size:12px;color:#8ba0c0;margin-bottom:3px">"${e.note}"</div>`:""}
+          <div style="font-size:11px;color:#4a7ab5">⏱ ${e.duration} min · ${fmtTs(e.ts)}</div>
+          <div style="display:flex;align-items:center;gap:4px;margin-top:7px;flex-wrap:wrap">
+            ${emojis.map(em=>{
+              const cnt=Object.values(r).filter(x=>x===em).length;
+              const mine=myR===em;
+              return `<button onclick="W.react('${e.id}','${em}')" style="background:${mine?"#1e3a2a":"#0d1528"};border:1px solid ${mine?"#4ade8060":"#1e2d4a"};border-radius:18px;padding:3px 8px;cursor:pointer;font-size:12px">${em}${cnt>0?`<span style="font-size:10px;color:#6b8ab5;margin-left:2px">${cnt}</span>`:""}</button>`;
+            }).join("")}
+            <button onclick="W.toggleCmt('${e.id}')" style="background:${s.activeComment===e.id?"#1a2d4a":"#0d1528"};border:1px solid ${s.activeComment===e.id?"#4a7ab5":"#1e2d4a"};border-radius:18px;padding:3px 10px;cursor:pointer;font-size:12px;color:#6b8ab0;font-weight:700">💬${cmts.length>0?` ${cmts.length}`:""}</button>
           </div>
-        </div>`;
-      }).join("")}
-
-      ${s.entries.length>0?`${(()=>{
-        const stats=ATHLETES.map(a=>({athlete:a,min:s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+(parseFloat(e.duration)||0),0),triMin:s.entries.filter(e=>e.athlete===a&&SPORT_CAT[e.sport]==="tri").reduce((x,e)=>x+(parseFloat(e.duration)||0),0)}));
-        const leader=stats[0].min>=stats[1].min?stats[0]:stats[1];
-        const triLeader=stats[0].triMin>=stats[1].triMin?stats[0]:stats[1];
-        return `
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;text-align:center;">
-            <div style="font-size:20px;">🏆</div>
-            <div style="font-size:13px;font-weight:800;margin-top:3px;">${leader.athlete}</div>
-            <div style="font-size:10px;color:#6b8ab0;margin-top:2px;">Gesamt-Lead</div>
-          </div>
-          <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;text-align:center;">
-            <div style="font-size:20px;">🏊🚴🏃</div>
-            <div style="font-size:13px;font-weight:800;margin-top:3px;">${triLeader.athlete}</div>
-            <div style="font-size:10px;color:#6b8ab0;margin-top:2px;">Tri-Lead</div>
-          </div>
-        </div>`;
-      })()}`:""}
-
-      <button onclick="fetchAiMoti()" style="width:100%;background:#1a1040;color:#a855f7;border:1px solid #a855f730;border-radius:12px;padding:10px;font-weight:700;font-size:12px;cursor:pointer;">
-        ${s.motiLoading?"⏳ Coach denkt...":"🤖 KI-Coach Motivation holen"}
-      </button>
-    `:""}
-
-    <!-- ══ CHAT ══ -->
-    ${s.tab==="chat"?`
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div>
-          <div style="font-size:17px;font-weight:800;">💬 Chat</div>
-          <div style="font-size:11px;color:#4a7ab5;margin-top:1px;">${ICONS[s.user]} Du · ${ICONS[other]} ${other}</div>
+          ${cmts.length>0?`
+          <div style="margin-top:7px;display:flex;flex-direction:column;gap:5px">
+            ${cmts.map(c=>`
+            <div style="background:#0d1528;border-radius:9px;padding:6px 10px;border-left:2px solid ${COL[c.author]||"#4a7ab5"}">
+              <div style="font-size:10px;color:${COL[c.author]||"#4a7ab5"};font-weight:700;margin-bottom:2px">${ICO[c.author]||"🔵"} ${c.author}</div>
+              <div style="font-size:12px;color:#c4d0e0;line-height:1.4">${c.text}</div>
+            </div>`).join("")}
+          </div>`:""}
+          ${s.activeComment===e.id?`
+          <div style="display:flex;gap:6px;margin-top:7px">
+            <input id="ci${e.id}" placeholder="Kommentar..." style="flex:1;background:#0d1528;border:1px solid #4a7ab560;border-radius:10px;padding:7px 11px;color:#e8eaf0;font-size:13px;outline:none" />
+            <button onclick="W.comment('${e.id}')" style="background:${COL[s.user]};color:#0a0e1a;border:none;border-radius:10px;padding:7px 13px;font-weight:800;font-size:13px;cursor:pointer">➤</button>
+          </div>`:""}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-left:8px;flex-shrink:0">
+          <div style="font-size:22px;opacity:0.4">${SICO[e.sport]||"⚡"}</div>
+          <button onclick="W.del('${e.id}')" style="background:#1a2540;border:none;color:#f87171;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer">🗑️</button>
         </div>
       </div>
-      <div style="background:#0d1528;border-radius:16px;padding:11px;height:360px;overflow-y:auto;border:1px solid #1e2d4a;margin-bottom:11px;display:flex;flex-direction:column;gap:7px;">
-        ${s.messages.length===0?`
-          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a7ab5;text-align:center;">
-            <div style="font-size:30px;margin-bottom:7px;">💬</div>
-            <div style="font-weight:700;">Noch keine Nachrichten</div>
-          </div>
-        `:s.messages.map(msg=>{
-          const isMe=msg.author===s.user;
-          const t=msg.ts?.toDate?msg.ts.toDate().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"";
-          return `
-          <div style="display:flex;flex-direction:column;align-items:${isMe?"flex-end":"flex-start"};">
-            <div style="max-width:80%;padding:8px 12px;border-radius:${isMe?"15px 15px 3px 15px":"15px 15px 15px 3px"};background:${isMe?COLORS[s.user]+"22":"#1a2540"};border:1px solid ${isMe?COLORS[s.user]+"45":"#2a3a5a"};">
-              <div style="font-size:13px;color:#e8eaf0;line-height:1.45;">${msg.text}</div>
-            </div>
-            <div style="font-size:10px;color:#3a5070;margin-top:2px;">
-              <span style="color:${COLORS[msg.author]||"#00e5ff"};font-weight:700;">${ICONS[msg.author]||"🔵"} ${msg.author}</span> · ${t}
-            </div>
-          </div>`;
-        }).join("")}
-        <div id="chatBottom"></div>
-      </div>
-      <div style="display:flex;gap:7px;margin-bottom:9px;">
-        <input id="chatInput" value="${s.chatInput.replace(/"/g,"&quot;")}" oninput="ss({chatInput:this.value})" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}" placeholder="Schreib ${other} was..."
-          style="flex:1;background:#111c35;border:1px solid #1e2d4a;border-radius:12px;padding:10px 13px;color:#e8eaf0;font-size:13px;outline:none;" />
-        <button onclick="sendMsg()" ${s.sending||!s.chatInput.trim()?"disabled":""} style="background:${COLORS[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:10px 17px;font-weight:800;font-size:15px;cursor:pointer;opacity:${s.sending||!s.chatInput.trim()?0.45:1};">➤</button>
-      </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;">
-        ${["💪 War heute im Training!","😅 Heute wird nix mehr...","🔥 Wann trainierst du?","🏊 Pool morgen?","🚴 Fahrt am Wochenende?","😎 Keine Ausreden!","🏃 5km heute?","🎾 Padel später?"].map(q=>`
-          <button onclick="ss({chatInput:'${q}'})" style="background:#111c35;border:1px solid #1e2d4a;color:#6b8ab0;border-radius:18px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:600;">${q}</button>`).join("")}
-      </div>
-    `:""}
+    </div>`;
+  }
 
+  // ─ log form ─
+  function logForm(){
+    return `
+    <div style="background:#111c35;border-radius:16px;padding:15px;border:1px solid #1e2d4a;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:${COL[s.user]}">${ICO[s.user]} ${s.user}s Einheit</div>
+        <button onclick="up({showLog:false})" style="background:#1a2540;border:none;color:#6b8ab0;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer">✕</button>
+      </div>
+      <div style="font-size:10px;color:#4a7ab5;font-weight:700;letter-spacing:1px;margin-bottom:6px">TRIATHLON</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+        ${["Schwimmen","Radfahren","Laufen","Brick"].map(sp=>`<button onclick="W.sport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?COL[s.user]:"#1a2540"};color:${s.form.sport===sp?"#0a0e1a":"#6b8ab0"}">${SICO[sp]} ${sp}</button>`).join("")}
+      </div>
+      <div style="font-size:10px;color:#4a7ab5;font-weight:700;letter-spacing:1px;margin-bottom:6px">EXTRAS</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">
+        ${["Krafttraining","Basketball","Padel","Yoga","Wandern","Anderes"].map(sp=>`<button onclick="W.sport('${sp}')" style="padding:5px 11px;border-radius:16px;border:none;cursor:pointer;font-size:11px;font-weight:600;background:${s.form.sport===sp?"#a855f7":"#1a2540"};color:${s.form.sport===sp?"#fff":"#6b8ab0"}">${SICO[sp]} ${sp}</button>`).join("")}
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="fdur" type="text" inputmode="numeric" placeholder="Dauer (min)" style="flex:1;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none" />
+        <select onchange="W.ff('emoji',this.value)" style="background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 8px;color:#e8eaf0;font-size:17px;outline:none">
+          ${["💪","🔥","😅","😎","🤩","😤","🥵","💯","🏆","😴"].map(em=>`<option value="${em}"${s.form.emoji===em?" selected":""}>${em}</option>`).join("")}
+        </select>
+      </div>
+      ${tf.length?`
+      <div style="background:#0d1528;border-radius:12px;padding:10px 12px;margin-bottom:10px;border:1px solid #1e2d4a">
+        <div style="font-size:10px;color:${COL[s.user]};font-weight:700;letter-spacing:1px;margin-bottom:8px">📊 TRACKING</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${tf.includes("distanz")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px">${s.form.sport==="Schwimmen"?"Distanz (m)":"Distanz (km)"}</div><input id="fdistanz" type="text" inputmode="decimal" placeholder="${s.form.sport==="Schwimmen"?"750":"5.4"}" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none"></div>`:""}
+          ${tf.includes("puls_avg")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px">Ø Puls (bpm)</div><input id="fpuls_avg" type="text" inputmode="numeric" placeholder="145" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none"></div>`:""}
+          ${tf.includes("puls_max")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px">Max Puls (bpm)</div><input id="fpuls_max" type="text" inputmode="numeric" placeholder="175" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none"></div>`:""}
+          ${tf.includes("pace")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px">Pace (min/km)</div><input id="fpace" type="text" placeholder="5:30" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none"></div>`:""}
+          ${tf.includes("speed")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px">Speed (km/h)</div><input id="fspeed" type="text" inputmode="decimal" placeholder="27.5" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none"></div>`:""}
+          ${tf.includes("schwimmbahnen")?`<div><div style="font-size:10px;color:#4a7ab5;margin-bottom:3px">Bahnen (25m)</div><input id="fschwimmbahnen" type="text" inputmode="numeric" placeholder="30" style="width:100%;background:#111c35;border:1px solid #1e2d4a;border-radius:8px;padding:7px 10px;color:#e8eaf0;font-size:13px;outline:none"></div>`:""}
+        </div>
+      </div>`:""}
+      <textarea id="fnote" placeholder="Kommentar..." style="width:100%;background:#0d1528;border:1px solid #1e2d4a;border-radius:10px;padding:9px 12px;color:#e8eaf0;font-size:13px;outline:none;margin-bottom:10px;resize:none;min-height:70px;line-height:1.5"></textarea>
+      <button onclick="W.saveNow()" style="width:100%;background:${COL[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;opacity:${s.saving?0.6:1}">
+        ${s.saving?"Speichern...":"💾 Einheit speichern"}
+      </button>
+    </div>`;
+  }
+
+  // ─ stats ─
+  function statsView(){
+    const athletes=[s.user,other];
+    return athletes.map(athlete=>{
+      const mine=s.entries.filter(e=>e.athlete===athlete);
+      const triMin=mine.filter(e=>SCAT[e.sport]==="tri").reduce((a,e)=>a+(parseFloat(e.duration)||0),0);
+      const extraMin=mine.filter(e=>SCAT[e.sport]==="extra").reduce((a,e)=>a+(parseFloat(e.duration)||0),0);
+      const totalMin=triMin+extraMin;
+      const maxMin=Math.max(...NAMES.map(a=>s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+(parseFloat(e.duration)||0),0)),1);
+      const swimKm=mine.filter(e=>e.sport==="Schwimmen"&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0)/1000;
+      const rideKm=mine.filter(e=>e.sport==="Radfahren"&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0);
+      const runKm=mine.filter(e=>(e.sport==="Laufen"||e.sport==="Brick")&&e.tracking?.distanz).reduce((a,e)=>a+(parseFloat(e.tracking.distanz)||0),0);
+      const bySport={};
+      mine.forEach(e=>{ bySport[e.sport]=(bySport[e.sport]||0)+(parseFloat(e.duration)||0); });
+      return `
+      <div style="background:#111c35;border-radius:16px;padding:15px;margin-bottom:11px;border-top:3px solid ${COL[athlete]}">
+        <div style="display:flex;justify-content:space-between;margin-bottom:11px">
+          <div style="font-size:15px;font-weight:800">${ICO[athlete]} ${athlete}</div>
+          <div style="font-size:12px;color:${COL[athlete]};font-weight:700">${mine.length} Einheiten</div>
+        </div>
+        <div style="margin-bottom:11px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#6b8ab0;margin-bottom:3px">
+            <span>Gesamtzeit</span><span style="color:${COL[athlete]};font-weight:700">${Math.floor(totalMin/60)}h ${Math.round(totalMin%60)}m</span>
+          </div>
+          <div style="height:7px;background:#0d1528;border-radius:7px;overflow:hidden">
+            <div style="height:100%;background:${COL[athlete]};width:${Math.min((totalMin/maxMin)*100,100).toFixed(1)}%"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:7px;margin-bottom:10px">
+          <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px">
+            <div style="font-size:9px;color:${COL[athlete]};font-weight:700;letter-spacing:1px;margin-bottom:2px">TRIATHLON</div>
+            <div style="font-size:13px;font-weight:800">${Math.round(triMin)} min</div>
+          </div>
+          <div style="flex:1;background:#0d1528;border-radius:9px;padding:7px 9px">
+            <div style="font-size:9px;color:#a855f7;font-weight:700;letter-spacing:1px;margin-bottom:2px">EXTRAS</div>
+            <div style="font-size:13px;font-weight:800">${Math.round(extraMin)} min</div>
+          </div>
+        </div>
+        <div style="background:#0d1528;border-radius:12px;padding:11px 13px;margin-bottom:10px">
+          <div style="font-size:9px;color:#facc15;font-weight:700;letter-spacing:1px;margin-bottom:10px">📍 TRAININGSKILOMETER</div>
+          ${[{l:"🏊 Schwimmen",km:swimKm,g:21,c:"#818cf8",ms:[3,6,10,14,18,21],dec:2},{l:"🚴 Radfahren",km:rideKm,g:350,c:"#00e5ff",ms:[50,100,150,200,250,300,350],dec:1},{l:"🏃 Laufen",km:runKm,g:84,c:"#4ade80",ms:[12,24,36,48,60,72,84],dec:1}].map(disc=>{
+            const pct=Math.min((disc.km/disc.g)*100,100);
+            const next=disc.ms.find(m=>m>disc.km);
+            return `
+            <div style="margin-bottom:11px">
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+                <span style="color:${disc.c};font-weight:700">${disc.l}</span>
+                <span style="color:#e8eaf0;font-weight:700">${disc.km.toFixed(disc.dec)} <span style="color:#4a7ab5">/ ${disc.g} km</span></span>
+              </div>
+              <div style="position:relative;height:8px;background:#1a2540;border-radius:6px;margin-bottom:4px">
+                <div style="height:100%;background:${disc.c};width:${pct.toFixed(1)}%;border-radius:6px"></div>
+                ${disc.ms.filter(m=>m<disc.g).map(m=>`<div style="position:absolute;top:-1px;left:${((m/disc.g)*100).toFixed(1)}%;transform:translateX(-50%);width:2px;height:10px;background:${disc.km>=m?disc.c:"#2a3a5a"};border-radius:1px"></div>`).join("")}
+              </div>
+              <div style="font-size:10px;color:#4a7ab5">${next?`Nächstes Ziel: <b style="color:${disc.c}">${next} km</b>`:`<b style="color:#4ade80">✅ Ziel erreicht!</b>`}</div>
+            </div>`;
+          }).join("")}
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${Object.entries(bySport).map(([sp,min])=>`
+          <div style="background:#0d1528;border-radius:9px;padding:5px 8px;border:1px solid ${SCAT[sp]==="extra"?"#a855f730":COL[athlete]+"20"}">
+            <div>${SICO[sp]||"⚡"}</div>
+            <div style="font-size:10px;font-weight:700;color:${SCAT[sp]==="extra"?"#a855f7":COL[athlete]}">${Math.round(min)}m</div>
+          </div>`).join("")}
+          ${Object.keys(bySport).length===0?`<div style="font-size:12px;color:#4a7ab5">Noch keine Einheiten</div>`:""}
+        </div>
+      </div>`;
+    }).join("")+`
+    ${s.entries.length>0?`
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      ${(()=>{
+        const st=NAMES.map(a=>({a,min:s.entries.filter(e=>e.athlete===a).reduce((x,e)=>x+(parseFloat(e.duration)||0),0),tri:s.entries.filter(e=>e.athlete===a&&SCAT[e.sport]==="tri").reduce((x,e)=>x+(parseFloat(e.duration)||0),0)}));
+        const L=st[0].min>=st[1].min?st[0]:st[1], TL=st[0].tri>=st[1].tri?st[0]:st[1];
+        return `
+        <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;text-align:center">
+          <div style="font-size:20px">🏆</div>
+          <div style="font-size:13px;font-weight:800;margin-top:3px">${L.a}</div>
+          <div style="font-size:10px;color:#6b8ab0;margin-top:2px">Gesamt-Lead</div>
+        </div>
+        <div style="flex:1;background:#111c35;border-radius:14px;padding:13px;text-align:center">
+          <div style="font-size:20px">🏊🚴🏃</div>
+          <div style="font-size:13px;font-weight:800;margin-top:3px">${TL.a}</div>
+          <div style="font-size:10px;color:#6b8ab0;margin-top:2px">Tri-Lead</div>
+        </div>`;
+      })()}
+    </div>`:""}
+    <button onclick="W.aiMoti()" style="width:100%;background:#1a1040;color:#a855f7;border:1px solid #a855f730;border-radius:12px;padding:10px;font-weight:700;font-size:12px;cursor:pointer">
+      ${s.motiLoading?"⏳ Coach denkt...":"🤖 KI-Coach Motivation holen"}
+    </button>`;
+  }
+
+  const html=`
+  <div style="min-height:100vh;background:#0a0e1a;color:#e8eaf0;max-width:480px;margin:0 auto;padding-bottom:80px">
+    <div style="background:linear-gradient(135deg,#0d1528,#111c35);border-bottom:1px solid #1e2d4a;padding:18px 18px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:10px;letter-spacing:3px;color:#4a7ab5;text-transform:uppercase;margin-bottom:3px">Sprint Triathlon</div>
+          <div style="font-size:22px;font-weight:800">🏁 ${daysLeft()} Tage</div>
+          <div style="font-size:12px;color:#6b8ab0;margin-top:1px">bis 30. August 2026</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:#4a7ab5;letter-spacing:2px;margin-bottom:5px">DU BIST</div>
+          <div style="display:flex;gap:5px">
+            ${NAMES.map(a=>`<button onclick="W.user('${a}')" style="padding:5px 11px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:${s.user===a?COL[a]:"#1a2540"};color:${s.user===a?"#0a0e1a":"#6b8ab0"}">${ICO[a]} ${a}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:12px">
+        ${[["🏊","750m"],["🚴","27km"],["🏃","5,4km"]].map(([ic,d])=>`<div style="flex:1;background:#0d1528;border-radius:10px;padding:6px 0;border:1px solid #1e2d4a;text-align:center"><div style="font-size:15px">${ic}</div><div style="font-size:11px;font-weight:700;color:#00e5ff">${d}</div></div>`).join("")}
+      </div>
     </div>
 
-    <!-- BOTTOM NAV -->
-    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#0d1528;border-top:1px solid #1e2d4a;display:flex;">
+    ${s.toast?`<div style="position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#1e2d4a;color:#e8eaf0;padding:9px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:999;border:1px solid #00e5ff40;white-space:nowrap">${s.toast}</div>`:""}
+
+    <div style="padding:15px">
+      ${s.tab==="feed"?`
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:17px;font-weight:800">Activity Feed</div>
+          <button onclick="W.toggleLog()" style="background:${COL[s.user]};color:#0a0e1a;border:none;border-radius:20px;padding:7px 15px;font-weight:800;font-size:12px;cursor:pointer">${s.showLog?"✕ Schließen":"+ Einheit"}</button>
+        </div>
+        ${s.showLog?logForm():""}
+        ${s.moti?`
+        <div style="background:linear-gradient(135deg,#1a1040,#0f1a35);border-radius:14px;padding:12px 14px;margin-bottom:12px;border-left:3px solid #a855f7">
+          <div style="display:flex;justify-content:space-between;gap:8px">
+            <div>
+              <div style="font-size:10px;color:#a855f7;font-weight:700;letter-spacing:1px;margin-bottom:5px">${s.moti.ai?"🤖 KI-COACH":"💬 WOCHENCHECK"}</div>
+              <div style="font-size:13px;color:#c4b5d4;line-height:1.5">${s.moti.e} ${s.moti.t}</div>
+            </div>
+            <button onclick="up({moti:null})" style="background:none;border:none;color:#4a7ab5;cursor:pointer;font-size:15px;flex-shrink:0">✕</button>
+          </div>
+          ${!s.moti.ai?`<button onclick="W.aiMoti()" style="margin-top:9px;background:#a855f720;border:1px solid #a855f740;color:#a855f7;border-radius:10px;padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer">${s.motiLoading?"⏳...":"🤖 KI-Coach fragen"}</button>`:""}
+        </div>`:""}
+        ${s.entries.length===0?`<div style="text-align:center;padding:48px;color:#4a7ab5;border:1px dashed #1e2d4a;border-radius:16px"><div style="font-size:36px;margin-bottom:8px">🏊🚴🏃</div><div style="font-weight:700">Noch keine Einheiten</div><div style="font-size:12px;margin-top:3px">Wer trainiert zuerst?</div></div>`:s.entries.map(entryCard).join("")}
+      `:""}
+
+      ${s.tab==="plan"?`
+        <div style="font-size:17px;font-weight:800;margin-bottom:3px">Trainingsplan</div>
+        <div style="font-size:11px;color:#4a7ab5;margin-bottom:12px">Inspiriert von Jan Frodeno · 3–4 Tage/Woche</div>
+        <div style="display:flex;gap:4px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px">
+          ${PLAN.map((pw,i)=>`<button onclick="up({selWeek:${i}})" style="min-width:40px;padding:5px 9px;border-radius:9px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:${s.selWeek===i?pw.col:"#111c35"};color:${s.selWeek===i?"#0a0e1a":i===cw?pw.col:"#4a7ab5"};outline:${i===cw?"2px solid "+pw.col:"none"};outline-offset:1px">W${pw.num}</button>`).join("")}
+        </div>
+        <div style="background:#111c35;border-radius:16px;padding:15px;border-top:3px solid ${w.col}">
+          <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+            <div>
+              <div style="font-size:10px;color:${w.col};letter-spacing:2px;font-weight:700">${w.phase.toUpperCase()}${w.deload?" · DELOAD":""}</div>
+              <div style="font-size:16px;font-weight:800">Woche ${w.num}</div>
+            </div>
+            <div style="text-align:right;font-size:11px;color:#4a7ab5">
+              ab ${fmtDate(w.start)}
+              ${s.selWeek===cw?`<div style="background:${w.col}25;color:${w.col};border-radius:7px;padding:2px 7px;font-size:10px;font-weight:700;margin-top:3px">← aktuelle Woche</div>`:""}
+            </div>
+          </div>
+          ${w.sessions.map(ss=>`
+          <div style="background:#0d1528;border-radius:11px;padding:10px 13px;margin-bottom:7px;border-left:3px solid ${w.col}50">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span>${SICO[ss.s]}</span><span style="font-weight:700;font-size:13px">${ss.desc}</span>
+              </div>
+              <div style="display:flex;gap:5px">
+                <span style="font-size:10px;background:#1a2540;color:#6b8ab0;padding:2px 7px;border-radius:7px;font-weight:700">${ss.d}</span>
+                ${ss.dur>0?`<span style="font-size:10px;color:${w.col};font-weight:700">${ss.dur}m</span>`:""}
+              </div>
+            </div>
+            <div style="font-size:11px;color:#6b8ab0">📋 ${ss.det}</div>
+          </div>`).join("")}
+          <div style="margin-top:11px;padding:9px;background:#0d1528;border-radius:9px">
+            <span style="font-size:12px;font-weight:700">⏱ ${w.sessions.reduce((a,x)=>a+x.dur,0)} min</span>
+            <span style="font-size:12px;font-weight:700;margin-left:12px">📅 ${w.sessions.length} Einheiten</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;background:#111c35;border-radius:13px;padding:12px 14px">
+          <div style="font-size:11px;font-weight:700;color:#6b8ab0;margin-bottom:7px">PHASEN</div>
+          ${PHASES.map(p=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px"><div style="width:9px;height:9px;border-radius:3px;background:${p.c}"></div><span style="font-size:12px;font-weight:600">${p.n}</span><span style="font-size:11px;color:#4a7ab5">· Woche ${p.w[0]}–${p.w[3]}</span></div>`).join("")}
+        </div>
+      `:""}
+
+      ${s.tab==="stats"?`<div style="font-size:17px;font-weight:800;margin-bottom:12px">Euer Duell 🔥</div>${statsView()}`:""}
+
+      ${s.tab==="chat"?`
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div><div style="font-size:17px;font-weight:800">💬 Chat</div><div style="font-size:11px;color:#4a7ab5;margin-top:1px">${ICO[s.user]} Du · ${ICO[other]} ${other}</div></div>
+        </div>
+        <div style="background:#0d1528;border-radius:16px;padding:11px;height:360px;overflow-y:auto;border:1px solid #1e2d4a;margin-bottom:11px;display:flex;flex-direction:column;gap:7px">
+          ${s.messages.length===0?`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4a7ab5;text-align:center"><div style="font-size:30px;margin-bottom:7px">💬</div><div style="font-weight:700">Noch keine Nachrichten</div></div>`:
+          s.messages.map(msg=>{
+            const me=msg.author===s.user;
+            const t=msg.ts?.toDate?msg.ts.toDate().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"";
+            return `<div style="display:flex;flex-direction:column;align-items:${me?"flex-end":"flex-start"}">
+              <div style="max-width:80%;padding:8px 12px;border-radius:${me?"15px 15px 3px 15px":"15px 15px 15px 3px"};background:${me?(COL[s.user]+"22"):"#1a2540"};border:1px solid ${me?(COL[s.user]+"45"):"#2a3a5a"}">
+                <div style="font-size:13px;color:#e8eaf0;line-height:1.45">${msg.text}</div>
+              </div>
+              <div style="font-size:10px;color:#3a5070;margin-top:2px"><span style="color:${COL[msg.author]||"#00e5ff"};font-weight:700">${ICO[msg.author]||"🔵"} ${msg.author}</span> · ${t}</div>
+            </div>`;
+          }).join("")}
+          <div id="cb"></div>
+        </div>
+        <div style="display:flex;gap:7px;margin-bottom:9px">
+          <input id="chatInp" placeholder="Schreib ${other} was..." style="flex:1;background:#111c35;border:1px solid #1e2d4a;border-radius:12px;padding:10px 13px;color:#e8eaf0;font-size:13px;outline:none" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();W.sendMsg()}" />
+          <button onclick="W.sendMsg()" style="background:${COL[s.user]};color:#0a0e1a;border:none;border-radius:12px;padding:10px 17px;font-weight:800;font-size:15px;cursor:pointer">➤</button>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${["💪 War heute im Training!","😅 Heute wird nix mehr...","🔥 Wann trainierst du?","🏊 Pool morgen?","🚴 Fahrt am Wochenende?","😎 Keine Ausreden!"].map(q=>`<button onclick="document.getElementById('chatInp').value='${q}'" style="background:#111c35;border:1px solid #1e2d4a;color:#6b8ab0;border-radius:18px;padding:4px 10px;font-size:10px;cursor:pointer;font-weight:600">${q}</button>`).join("")}
+        </div>
+      `:""}
+    </div>
+
+    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#0d1528;border-top:1px solid #1e2d4a;display:flex">
       ${[{id:"feed",icon:"📡",label:"Feed"},{id:"plan",icon:"📋",label:"Plan"},{id:"stats",icon:"⚡",label:"Duell"},{id:"chat",icon:"💬",label:"Chat"}].map(t=>`
-        <button onclick="ss({tab:'${t.id}'})" style="flex:1;padding:11px 0 9px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid ${s.tab===t.id?COLORS[s.user]:"transparent"};">
-          <span style="font-size:19px;">${t.icon}</span>
-          <span style="font-size:10px;font-weight:700;color:${s.tab===t.id?COLORS[s.user]:"#4a7ab5"};">${t.label}</span>
-        </button>`).join("")}
+      <button onclick="up({tab:'${t.id}'})" style="flex:1;padding:11px 0 9px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;border-top:2px solid ${s.tab===t.id?COL[s.user]:"transparent"}">
+        <span style="font-size:19px">${t.icon}</span>
+        <span style="font-size:10px;font-weight:700;color:${s.tab===t.id?COL[s.user]:"#4a7ab5"}">${t.label}</span>
+      </button>`).join("")}
     </div>
   </div>`;
+
+  document.getElementById("root").innerHTML=html;
 }
 
-window.ss          = ss;
-window.setUser     = u => ss({user:u});
-window.toggleLog   = () => ss({showLog:!S.showLog});
-window.setFormSport= sp => ss({form:{...S.form,sport:sp}});
-window.setFF       = (k,v) => ss({form:{...S.form,[k]:v}});
-window.saveEntry   = saveEntry;
-window.delEntry    = delEntry;
-window.reactEntry  = reactEntry;
-window.addComment  = addComment;
-window.toggleComment = id => ss({activeComment: S.activeComment===id ? null : id, commentInput:""});
-window.sendMsg     = sendMsg;
-window.fetchAiMoti = fetchAiMoti;
+// ── Window API ────────────────────────────────────────────────────────────────
+window.up = up;
+window.W = {
+  user: a => up({user:a}),
+  toggleLog: () => up({showLog:!ST.showLog}),
+  sport: sp => up({form:{...ST.form,sport:sp}}),
+  ff: (k,v) => up({form:{...ST.form,[k]:v}}),
+  saveNow: () => {
+    const get = id => document.getElementById(id)?.value||"";
+    ST.form.duration    = get("fdur");
+    ST.form.note        = get("fnote");
+    ST.form.distanz     = get("fdistanz");
+    ST.form.puls_avg    = get("fpuls_avg");
+    ST.form.puls_max    = get("fpuls_max");
+    ST.form.pace        = get("fpace");
+    ST.form.speed       = get("fspeed");
+    ST.form.schwimmbahnen = get("fschwimmbahnen");
+    save();
+  },
+  del, react, comment,
+  toggleCmt: id => up({activeComment: ST.activeComment===id ? null : id}),
+  sendMsg,
+  aiMoti,
+};
 
-render();
+draw();
 </script>
 </body>
 </html>
