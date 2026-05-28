@@ -333,7 +333,7 @@ function render(){
                     ${em}${count>0?`<span style="font-size:10px;color:#6b8ab0;font-weight:700;">${count}</span>`:""}
                   </button>`;
                 }).join("")}
-                <button onclick="ss({activeComment:S.activeComment==='${e.id}'?null:'${e.id}',commentInput:''})" style="background:${s.activeComment===e.id?"#1a2d4a":"#0d1528"};border:1px solid ${s.activeComment===e.id?"#4a7ab5":"#1e2d4a"};border-radius:20px;padding:3px 10px;cursor:pointer;font-size:12px;color:#6b8ab0;font-weight:700;">💬</button>
+                <button onclick="toggleComment('${e.id}')" style="background:${s.activeComment===e.id?"#1a2d4a":"#0d1528"};border:1px solid ${s.activeComment===e.id?"#4a7ab5":"#1e2d4a"};border-radius:20px;padding:3px 10px;cursor:pointer;font-size:12px;color:#6b8ab0;font-weight:700;">💬</button>
               </div>
               <!-- Existing comments -->
               ${(e.comments||[]).length>0?`
@@ -578,6 +578,7 @@ window.saveEntry   = saveEntry;
 window.delEntry    = delEntry;
 window.reactEntry  = reactEntry;
 window.addComment  = addComment;
+window.toggleComment = id => ss({activeComment: S.activeComment===id ? null : id, commentInput:""});
 window.sendMsg     = sendMsg;
 window.fetchAiMoti = fetchAiMoti;
 
